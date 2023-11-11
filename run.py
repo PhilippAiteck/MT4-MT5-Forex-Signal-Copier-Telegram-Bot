@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 CALCULATE, TRADE, DECISION = range(3)
 
 # allowed FX symbols
-SYMBOLS = ['AUDCAD', 'AUDCHF', 'AUDJPY', 'AUDNZD', 'AUDUSD', 'CADCHF', 'CADJPY', 'CHFJPY', 'EURAUD', 'EURCAD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURNZD', 'EURUSD', 'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPJPY', 'GBPNZD', 'GBPUSD', 'NOW', 'NZDCAD', 'NZDCHF', 'NZDJPY', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'XAGUSD', 'XAUUSD']
+SYMBOLS = ['EURUSD.i', 'USDJPY.i', 'GBPUSD.i', 'USDCHF.i', 'AUDUSD.i', 'USDCAD.i', 'NZDUSD.i', 'EURGBP.i', 'EURJPY.i', 'GBPJPY.i', 'AUDJPY.i', 'NZDJPY.i', 'EURAUD.i', 'GBPAUD.i', 'EURNZD.i', 'GBPNZD.i', 'EURCAD.i', 'GBPCAD.i', 'AUDCAD.i', 'NZDCAD.i', 'EURCHF.i', 'GBPCHF.i', 'AUDCHF.i', 'NZDCHF.i', 'USDSEK.i', 'USDDKK.i', 'USDNOK.i', 'USDTRY.i', 'USDMXN.i', 'USDZAR.i', 'EURSEK.i', 'EURDKK.i', 'EURNOK.i', 'EURTRY.i', 'EURMXN.i', 'EURZAR.i', 'GBPSEK.i', 'GBPDKK.i', 'GBPNOK.i', 'GBPTRY.i', 'GBPMXN.i', 'GBPZAR.i', 'AUDSEK.i', 'AUDDKK.i', 'AUDNOK.i', 'AUDTRY.i', 'AUDMXN.i', 'AUDZAR.i', 'BTCUSD.b', 'ETHUSD.b', 'XRPUSD.b', 'LTCUSD.b', 'BCHUSD.b', 'ADAUSD.b', 'XLMUSD.b', 'EOSUSD.b', 'XMRUSD.b', 'DASHUSD.b', 'ZECUSD.b', 'BNBUSD.b', 'XTZUSD.b', 'ATOMUSD.b', 'ONTUSD.b', 'NEOUSD.b', 'VETUSD.b', 'ICXUSD.b', 'QTUMUSD.b', 'ZRXUSD.b', 'DOGEUSD.b', 'LINKUSD.b', 'HTUSD.b', 'ETCUSD.b', 'OMGUSD.b', 'NANOUSD.b', 'LSKUSD.b', 'WAVESUSD.b', 'REPUSD.b', 'MKRUSD.b', 'GNTUSD.b', 'LOOMUSD.b', 'MANAUSD.b', 'KNCUSD.b', 'CVCUSD.b', 'BATUSD.b', 'NEXOUSD.b', 'DCRUSD.b', 'PAXUSD.b', 'TUSDUSD.b', 'USDCUSD.b', 'USDTUSD.b', 'SPX500.b', 'US30.b', 'NDX100', 'GER30.b', 'UK100.b', 'AUS200.b', 'FRA40.b', 'JPN225.b', 'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'XAUEUR', 'XAUGBP', 'XAGEUR', 'XAGGBP', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD', 'SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'US100', 'GER30', 'UK100', 'AUS200', 'FRA40', 'JP225', 'HK50', 'IN50', 'CN50', 'SG30']
 
 # RISK FACTOR
 RISK_FACTOR = float(os.environ.get("RISK_FACTOR"))
@@ -103,6 +103,10 @@ def ParseSignal(signal: str) -> dict:
     # checks if there's a fourth line and parses it for TP2
     if(len(signal) > 4):
         trade['TP'].append(float(signal[4].split()[-1]))
+        
+    # checks if there's a fith line and parses it for TP3
+    # if(len(signal) > 5):
+    #    trade['TP'].append(float(signal[5].split()[-1]))
     
     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
