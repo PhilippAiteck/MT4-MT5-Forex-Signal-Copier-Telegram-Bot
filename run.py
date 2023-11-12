@@ -130,7 +130,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         multiplier = 0.001
 
     elif(str(trade['Entry']).index('.') >= 2):
-        multiplier = 0.01
+        multiplier = 1
 
     else:
         multiplier = 0.0001
