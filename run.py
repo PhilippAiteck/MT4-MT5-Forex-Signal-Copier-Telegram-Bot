@@ -106,8 +106,8 @@ def ParseSignal(signal: str) -> dict:
         trade['TP'].append(float(signal[4].split()[-1]))
         
     # checks if there's a fith line and parses it for TP3
-    # if(len(signal) > 5):
-    #    trade['TP'].append(float(signal[5].split()[-1]))
+    if(len(signal) > 5):
+        trade['TP'].append(float(signal[5].split()[-1]))
     
     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
