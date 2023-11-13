@@ -45,7 +45,7 @@ SPECIALSYMBOLS = ['SPX500.b', 'US30.b', 'NDX100.b', 'GER30.b', 'UK100.b', 'AUS20
 # RISK FACTOR
 RISK_FACTOR = float(os.environ.get("RISK_FACTOR"))
 
-async def GetOngoingTrades(update: Update) -> None:
+async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
     """Retrieves information about all ongoing trades.
 
     Arguments:
