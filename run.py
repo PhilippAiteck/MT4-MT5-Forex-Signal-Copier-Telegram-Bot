@@ -45,47 +45,6 @@ SPECIALSYMBOLS = ['SPX500.b', 'US30.b', 'NDX100.b', 'GER30.b', 'UK100.b', 'AUS20
 # RISK FACTOR
 RISK_FACTOR = float(os.environ.get("RISK_FACTOR"))
 
-async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
-    """Retrieves information about all ongoing trades.
-
-    Arguments:
-        update: update from Telegram
-    """
-    api = MetaApi(API_KEY)
-
-    try:
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        connection = account.get_rpc_connection()
-        await connection.connect()
-
-        # Fetch open positions
-        positions = await connection.get_positions()
-
-        if not positions:
-            update.effective_message.reply_text("No ongoing trades at the moment.")
-            return
-
-        for position in positions:
-            # Calculate trade duration
-            entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
-            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
-
-            # Add more information or send the details to the user
-            trade_info = f"Symbol: {position['symbol']}\n" \
-                         f"Entry Time: {entry_time}\n" \
-                         f"Duration: {duration}\n" \
-                         f"Profit: {position['profit']}\n" \
-                         f"Capture of Graph: [Add link or image here]"
-
-            update.effective_message.reply_text(trade_info)
-
-    except Exception as error:
-        logger.error(f'Error: {error}')
-        update.effective_message.reply_text(f"Failed to retrieve ongoing trades. Error: {error}")
-
-    return
-
 # Helper Functions
 def ParseSignal(signal: str) -> dict:
     """Starts process of parsing signal and entering trade on MetaTrader account.
@@ -556,6 +515,47 @@ def Calculation_Command(update: Update, context: CallbackContext) -> int:
 
     return CALCULATE
 
+async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
+    """Retrieves information about all ongoing trades.
+
+    Arguments:
+        update: update from Telegram
+    """
+    api = MetaApi(API_KEY)
+
+    try:
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # Fetch open positions
+        positions = await connection.get_positions()
+
+        if not positions:
+            update.effective_message.reply_text("No ongoing trades at the moment.")
+            return
+
+        for position in positions:
+            # Calculate trade duration
+            entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
+            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
+
+            # Add more information or send the details to the user
+            trade_info = f"Symbol: {position['symbol']}\n" \
+                         f"Entry Time: {entry_time}\n" \
+                         f"Duration: {duration}\n" \
+                         f"Profit: {position['profit']}\n" \
+                         f"Capture of Graph: [Add link or image here]"
+
+            update.effective_message.reply_text(trade_info)
+
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        update.effective_message.reply_text(f"Failed to retrieve ongoing trades. Error: {error}")
+
+    return
+
 
 def main() -> None:
     """Runs the Telegram bot."""
@@ -570,6 +570,9 @@ def main() -> None:
 
     # help command handler
     dp.add_handler(CommandHandler("help", help))
+
+    # command to receive information about all ongoing trades.
+    dp.add_handler(CommandHandler("ongoing_trades", GetOngoingTrades))
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("trade", Trade_Command), CommandHandler("calculate", Calculation_Command)],
@@ -581,9 +584,6 @@ def main() -> None:
         fallbacks=[CommandHandler("cancel", cancel)],
     )
     
-    # command to receive information about all ongoing trades.
-    dp.add_handler(CommandHandler("ongoing_trades", GetOngoingTrades))
-
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
