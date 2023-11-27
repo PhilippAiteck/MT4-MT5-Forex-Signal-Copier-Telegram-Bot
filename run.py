@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 CALCULATE, TRADE, DECISION = range(3)
 
 # allowed FX symbols
-SYMBOLS = ['EURUSD.i', 'USDJPY.i', 'GBPUSD.i', 'USDCHF.i', 'AUDUSD.i', 'USDCAD.i', 'NZDUSD.i', 'EURGBP.i', 'EURJPY.i', 'GBPJPY.i', 'AUDJPY.i', 'NZDJPY.i', 'EURAUD.i', 'GBPAUD.i', 'EURNZD.i', 'GBPNZD.i', 'EURCAD.i', 'GBPCAD.i', 'AUDCAD.i', 'NZDCAD.i', 'EURCHF.i', 'GBPCHF.i', 'AUDCHF.i', 'NZDCHF.i', 'USDSEK.i', 'USDDKK.i', 'USDNOK.i', 'USDTRY.i', 'USDMXN.i', 'USDZAR.i', 'EURSEK.i', 'EURDKK.i', 'EURNOK.i', 'EURTRY.i', 'EURMXN.i', 'EURZAR.i', 'GBPSEK.i', 'GBPDKK.i', 'GBPNOK.i', 'GBPTRY.i', 'GBPMXN.i', 'GBPZAR.i', 'AUDSEK.i', 'AUDDKK.i', 'AUDNOK.i', 'AUDTRY.i', 'AUDMXN.i', 'AUDZAR.i', 'CADJPY.i', 'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'XAUEUR', 'XAUGBP', 'XAGEUR', 'XAGGBP', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY']
+SYMBOLS = ['EURUSD.i', 'USDJPY.i', 'GBPUSD.i', 'USDCHF.i', 'AUDUSD.i', 'USDCAD.i', 'NZDUSD.i', 'EURGBP.i', 'EURJPY.i', 'GBPJPY.i', 'AUDJPY.i', 'NZDJPY.i', 'EURAUD.i', 'GBPAUD.i', 'EURNZD.i', 'GBPNZD.i', 'EURCAD.i', 'GBPCAD.i', 'AUDCAD.i', 'NZDCAD.i', 'EURCHF.i', 'GBPCHF.i', 'AUDCHF.i', 'NZDCHF.i', 'USDSEK.i', 'USDDKK.i', 'USDNOK.i', 'USDTRY.i', 'USDMXN.i', 'USDZAR.i', 'EURSEK.i', 'EURDKK.i', 'EURNOK.i', 'EURTRY.i', 'EURMXN.i', 'EURZAR.i', 'GBPSEK.i', 'GBPDKK.i', 'GBPNOK.i', 'GBPTRY.i', 'GBPMXN.i', 'GBPZAR.i', 'AUDSEK.i', 'AUDDKK.i', 'AUDNOK.i', 'AUDTRY.i', 'AUDMXN.i',  'AUDNZD.i','AUDZAR.i', 'CADJPY.i', 'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'XAUEUR', 'XAUGBP', 'XAGEUR', 'XAGGBP', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD']
 SPECIALSYMBOLS = ['SPX500.b', 'US30.b', 'NDX100.b', 'GER30.b', 'UK100.b', 'AUS200.b', 'FRA40.b', 'JPN225.b', 'SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'US100', 'GER30', 'UK100', 'AUS200', 'FRA40', 'JP225', 'HK50', 'IN50', 'CN50', 'SG30', 'BTCUSD.b', 'ETHUSD.b', 'XRPUSD.b', 'LTCUSD.b', 'BCHUSD.b', 'ADAUSD.b', 'XLMUSD.b', 'EOSUSD.b', 'XMRUSD.b', 'DASHUSD.b', 'ZECUSD.b', 'BNBUSD.b', 'XTZUSD.b', 'ATOMUSD.b', 'ONTUSD.b', 'NEOUSD.b', 'VETUSD.b', 'ICXUSD.b', 'QTUMUSD.b', 'ZRXUSD.b', 'DOGEUSD.b', 'LINKUSD.b', 'HTUSD.b', 'ETCUSD.b', 'OMGUSD.b', 'NANOUSD.b', 'LSKUSD.b', 'WAVESUSD.b', 'REPUSD.b', 'MKRUSD.b', 'GNTUSD.b', 'LOOMUSD.b', 'MANAUSD.b', 'KNCUSD.b', 'CVCUSD.b', 'BATUSD.b', 'NEXOUSD.b', 'DCRUSD.b', 'PAXUSD.b', 'TUSDUSD.b', 'USDCUSD.b', 'USDTUSD.b', 'BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD']
 
 # RISK FACTOR
@@ -207,6 +207,32 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
     return table
 
+
+async def GetOpenTradeIDs(connection):
+    try:
+        positions = await connection.get_positions()
+        trade_ids = [position['id'] for position in positions]
+        return trade_ids
+    except Exception as e:
+        return str(e)
+
+
+async def CloseTrade(connection, trade_id):
+    try:
+        result = await connection.close_order(trade_id)
+        return result
+    except Exception as e:
+        return str(e)
+
+
+async def MoveToBreakEven(connection, trade_id, break_even_price):
+    try:
+        result = await connection.modify_position(trade_id, stop_loss=break_even_price)
+        return result
+    except Exception as e:
+        return str(e)
+
+
 async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
     """Attempts connection to MetaAPI and MetaTrader to place trade.
 
@@ -246,6 +272,18 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         account_information = await connection.get_account_information()
 
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
+
+
+         # Ajout de la logique pour la fermeture du trade et le breakeven
+        if 'close_trade_id' in trade:
+            result_close = await CloseTrade(connection, trade['close_trade_id'])
+            update.effective_message.reply_text(f"Trade closed! Result: {result_close}")
+
+        if 'move_to_break_even' in trade:
+            break_even_price = trade['move_to_break_even']
+            result_be = await MoveToBreakEven(connection, trade['move_to_break_even']['trade_id'], break_even_price)
+            update.effective_message.reply_text(f"Moved to breakeven! Result: {result_be}")
+
 
         # checks if the order is a market execution to get the current price of symbol
         if(trade['Entry'] == 'NOW'):
