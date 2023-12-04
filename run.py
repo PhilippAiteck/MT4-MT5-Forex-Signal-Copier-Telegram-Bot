@@ -580,9 +580,11 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
             duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
 
             # Add more information or send the details to the user
+            # f"Entry Time: {entry_time}\n" \
+            # f"Duration: {duration}\n" \
+
             trade_info = f"Symbol: {position['symbol']}\n" \
-                         f"Entry Time: {entry_time}\n" \
-                         f"Duration: {duration}\n" \
+                         f"Volume: {position['volume']}\n" \
                          f"Profit: {position['profit']}\n" \
                          f"Capture of Graph: [Add link or image here]"
 
