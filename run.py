@@ -93,8 +93,8 @@ def ParseSignal(signal: str) -> dict:
 
     # extracts symbol from trade signal
     trade['Symbol'] = (signal[0].split())[-1]
-    if('/' in trade['Symbol']):
-        trade['Symbol'] = trade['Symbol'].replace('/','')
+    # if('/' in trade['Symbol']):
+    #    trade['Symbol'] = trade['Symbol'].replace('/','')
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
@@ -330,7 +330,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'ACHAT'):
-                    account_information['balance'] = account_information['balance'].replace('$','')
+                    # account_information['balance'] = account_information['balance'].replace('$','')
                     if(account_information['balance'] <= 499):
                         trade['PositionSize'] = 0.02
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 2, trade['Entry'])
@@ -359,7 +359,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'VENTE'):
-                    account_information['balance'] = account_information['balance'].replace('$','')
+                    # account_information['balance'] = account_information['balance'].replace('$','')
                     if(account_information['balance'] <= 499):
                         trade['PositionSize'] = 0.02
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 2, trade['Entry'])
