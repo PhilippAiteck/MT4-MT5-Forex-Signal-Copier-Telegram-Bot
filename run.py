@@ -93,8 +93,9 @@ def ParseSignal(signal: str) -> dict:
 
     # extracts symbol from trade signal
     trade['Symbol'] = (signal[0].split())[-1]
-    # if('/' in trade['Symbol']):
-    #    trade['Symbol'] = trade['Symbol'].replace('/','')
+    if('/' in trade['Symbol']):
+        trade['Symbol'] = trade['Symbol'].replace('/','')
+        print (trade['Symbol'])
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
@@ -105,15 +106,18 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = (signal[1].split())[-1]
 
     elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[2].split(':'))[-1]
-    
+        trade['Entry'] = (signal[1].split(':'))[-1]
+        print (trade['Entry'])
+
     else:
         trade['Entry'] = float((signal[1].split())[-1])
     
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         trade['StopLoss'] = 0
+        #print (trade['StopLoss'])
         trade['TP'] = 0
+        #print (trade['TP'])
 
     else:
         trade['StopLoss'] = float((signal[2].split())[-1])
