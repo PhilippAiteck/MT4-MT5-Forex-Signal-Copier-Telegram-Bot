@@ -106,17 +106,17 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = (signal[1].split())[-1]
 
     elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[1].split(' : '))[-1]
+        trade['Entry'] = (signal[1].split('-'))[-1]
         logger.info(trade['Entry'])
 
     else:
         trade['Entry'] = float((signal[1].split())[-1])
     
-    #if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-    #    trade['StopLoss'] = 0
-    #    print (trade['StopLoss'])
-    #    trade['TP'] = [0]
-    #    print (trade['TP'])
+    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        trade['StopLoss'] = 0
+        print (trade['StopLoss'])
+        trade['TP'] = [0]
+        print (trade['TP'])
 
     #else:
     trade['StopLoss'] = float((signal[2].split())[-1])
