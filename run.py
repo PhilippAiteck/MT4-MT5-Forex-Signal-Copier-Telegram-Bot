@@ -106,7 +106,7 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = (signal[1].split())[-1]
 
     elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[1].split('-'))[-1]
+        trade['Entry'] = (signal[1].split())[-1]
         logger.info(trade['Entry'])
 
     else:
@@ -114,15 +114,15 @@ def ParseSignal(signal: str) -> dict:
     
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         trade['StopLoss'] = 0
-        print (trade['StopLoss'])
+        logger.info(trade['StopLoss'])
         trade['TP'] = [0]
-        print (trade['TP'])
+        logger.info(trade['TP'])
 
-    #else:
-    trade['StopLoss'] = float((signal[2].split())[-1])
-    logger.info(trade['StopLoss'])
-    trade['TP'] = [float((signal[3].split())[-1])]
-    logger.info(trade['TP'])
+    else:
+        trade['StopLoss'] = float((signal[2].split())[-1])
+        logger.info(trade['StopLoss'])
+        trade['TP'] = [float((signal[3].split())[-1])]
+        logger.info(trade['TP'])
 
     # checks if there's a fourth line and parses it for TP2
     if(len(signal) > 4):
