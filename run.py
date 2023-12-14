@@ -77,9 +77,15 @@ def ParseSignal(signal: str) -> dict:
 
     elif('Buy'.lower() in signal[0].lower()):
         trade['OrderType'] = 'Buy'
+
+    elif('ACHAT'.lower() in signal[0].lower()):
+        trade['OrderType'] = 'ACHAT'
     
     elif('Sell'.lower() in signal[0].lower()):
         trade['OrderType'] = 'Sell'
+
+    elif('VENTE'.lower() in signal[0].lower()):
+        trade['OrderType'] = 'VENTE'
     
     # returns an empty dictionary if an invalid order type was given
     else:
@@ -87,6 +93,8 @@ def ParseSignal(signal: str) -> dict:
 
     # extracts symbol from trade signal
     trade['Symbol'] = (signal[0].split())[-1]
+    if('/' in trade['Symbol']):
+        trade['Symbol'] = trade['Symbol'].replace('/','')
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
@@ -95,12 +103,21 @@ def ParseSignal(signal: str) -> dict:
     # checks wheter or not to convert entry to float because of market exectution option ("NOW")
     if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
         trade['Entry'] = (signal[1].split())[-1]
+
+    elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        trade['Entry'] = (signal[2].split(':'))[-1]
     
     else:
         trade['Entry'] = float((signal[1].split())[-1])
     
-    trade['StopLoss'] = float((signal[2].split())[-1])
-    trade['TP'] = [float((signal[3].split())[-1])]
+
+    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        trade['StopLoss'] = 0
+        trade['TP'] = 0
+
+    else:
+        trade['StopLoss'] = float((signal[2].split())[-1])
+        trade['TP'] = [float((signal[3].split())[-1])]
 
     # checks if there's a fourth line and parses it for TP2
     if(len(signal) > 4):
@@ -286,15 +303,15 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
 
         # checks if the order is a market execution to get the current price of symbol
-        if(trade['Entry'] == 'NOW'):
+        if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
             price = await connection.get_symbol_price(symbol=trade['Symbol'])
 
             # uses bid price if the order type is a buy
-            if(trade['OrderType'] == 'Buy'):
+            if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
                 trade['Entry'] = float(price['bid'])
 
             # uses ask price if the order type is a sell
-            if(trade['OrderType'] == 'Sell'):
+            if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
                 trade['Entry'] = float(price['ask'])
 
         # produces a table with trade information
@@ -312,6 +329,20 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                     for takeProfit in trade['TP']:
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
+                elif(trade['OrderType'] == 'ACHAT'):
+                    account_information['balance'] = account_information['balance'].replace('$','')
+                    if(account_information['balance'] <= 499):
+                        trade['PositionSize'] = 0.02
+                        result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 2, trade['Entry'])
+
+                    elif(account_information['balance'] >= 500 and account_information['balance'] < 1000):
+                        trade['PositionSize'] = 0.04
+                        result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
+
+                    elif(account_information['balance'] >= 1000):
+                        trade['PositionSize'] = 0.05
+                        result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
+
                 # executes buy limit order
                 elif(trade['OrderType'] == 'Buy Limit'):
                     for takeProfit in trade['TP']:
@@ -326,6 +357,20 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                 elif(trade['OrderType'] == 'Sell'):
                     for takeProfit in trade['TP']:
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
+
+                elif(trade['OrderType'] == 'VENTE'):
+                    account_information['balance'] = account_information['balance'].replace('$','')
+                    if(account_information['balance'] <= 499):
+                        trade['PositionSize'] = 0.02
+                        result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 2, trade['Entry'])
+
+                    elif(account_information['balance'] >= 500 and account_information['balance'] < 1000):
+                        trade['PositionSize'] = 0.04
+                        result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
+
+                    elif(account_information['balance'] >= 1000):
+                        trade['PositionSize'] = 0.05
+                        result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
 
                 # executes sell limit order
                 elif(trade['OrderType'] == 'Sell Limit'):
