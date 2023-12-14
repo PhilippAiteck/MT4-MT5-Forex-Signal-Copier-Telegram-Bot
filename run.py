@@ -124,13 +124,13 @@ def ParseSignal(signal: str) -> dict:
         trade['TP'] = [float((signal[3].split())[-1])]
         logger.info(trade['TP'])
 
-    # checks if there's a fourth line and parses it for TP2
-    if(len(signal) > 4):
-        trade['TP'].append(float(signal[4].split()[-1]))
-        
-    # checks if there's a fith line and parses it for TP3
-    if(len(signal) > 5):
-        trade['TP'].append(float(signal[5].split()[-1]))
+        # checks if there's a fourth line and parses it for TP2
+        if(len(signal) > 4):
+            trade['TP'].append(float(signal[4].split()[-1]))
+            
+        # checks if there's a fith line and parses it for TP3
+        if(len(signal) > 5):
+            trade['TP'].append(float(signal[5].split()[-1]))
     
     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
