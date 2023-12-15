@@ -288,6 +288,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
         # obtains account information from MetaTrader server
         account_information = await connection.get_account_information()
+        logger.info(account_information['balance'])
 
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
 
@@ -306,12 +307,10 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         # checks if the order is a market execution to get the current price of symbol
         if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
             price = await connection.get_symbol_price(symbol=trade['Symbol'])
-            logger.info(trade['Entry'])
 
             # uses bid price if the order type is a buy
             if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
                 trade['Entry'] = float(price['bid'])
-                logger.info(trade['Entry'])
 
             # uses ask price if the order type is a sell
             if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
@@ -319,7 +318,6 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
         # produces a table with trade information
         #GetTradeInformation(update, trade, account_information['balance'])
-        logger.info(account_information['balance'])
             
         # checks if the user has indicated to enter trade
         if(enterTrade == True):
