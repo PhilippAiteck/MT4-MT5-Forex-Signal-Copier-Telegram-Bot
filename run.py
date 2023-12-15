@@ -304,7 +304,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
 
         # checks if the order is a market execution to get the current price of symbol
-        if(trade['Entry'] == 'NOW' or len(trade['Entry']) == 3):
+        if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
             price = await connection.get_symbol_price(symbol=trade['Symbol'])
 
             # uses bid price if the order type is a buy
