@@ -95,7 +95,7 @@ def ParseSignal(signal: str) -> dict:
     trade['Symbol'] = (signal[0].split())[-1]
     if('/' in trade['Symbol']):
         trade['Symbol'] = trade['Symbol'].replace('/','')
-        logger.info(trade['Symbol'])
+        #logger.info(trade['Symbol'])
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
@@ -106,7 +106,7 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = (signal[1].split())[-1]
 
     elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[1].split(':'))[-1]
+        trade['Entry'] = (signal[1].split(' : '))[-1]
         logger.info(trade['Entry'])
 
     else:
@@ -306,10 +306,12 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         # checks if the order is a market execution to get the current price of symbol
         if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
             price = await connection.get_symbol_price(symbol=trade['Symbol'])
+            logger.info(trade['Entry'])
 
             # uses bid price if the order type is a buy
             if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
                 trade['Entry'] = float(price['bid'])
+                logger.info(trade['Entry'])
 
             # uses ask price if the order type is a sell
             if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
