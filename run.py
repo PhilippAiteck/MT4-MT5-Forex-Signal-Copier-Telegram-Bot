@@ -337,11 +337,11 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         trade['PositionSize'] = 0.02
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 2, trade['Entry'])
 
-                    elif(account_information['balance'] >= 500 and account_information['balance'] < 1000):
+                    elif(account_information['balance'] > 499 and account_information['balance'] < 1000):
                         trade['PositionSize'] = 0.04
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
 
-                    elif(account_information['balance'] >= 1000):
+                    else:
                         trade['PositionSize'] = 0.05
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
 
@@ -366,11 +366,11 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         trade['PositionSize'] = 0.02
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 2, trade['Entry'])
 
-                    elif(account_information['balance'] >= 500 and account_information['balance'] < 1000):
+                    elif(account_information['balance'] > 499 and account_information['balance'] < 1000):
                         trade['PositionSize'] = 0.04
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
 
-                    elif(account_information['balance'] >= 1000):
+                    else:
                         trade['PositionSize'] = 0.05
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / 3, trade['Entry'])
 
