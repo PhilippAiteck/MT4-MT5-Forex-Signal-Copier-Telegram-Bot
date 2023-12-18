@@ -163,6 +163,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
     logger.info(stopLossPips)
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        takeProfitPips = []
         if(balance <= 499):
             trade['PositionSize'] = 0.03
 
@@ -171,7 +172,6 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
 
         else:
             trade['PositionSize'] = 0.05
-
 
     else:
         # calculates the position size using stop loss and RISK FACTOR
@@ -182,7 +182,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         for takeProfit in trade['TP']:
             takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
-    #logger.info(takeProfitPips)
+    logger.info(takeProfitPips)
     
     # creates table with trade information
     table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
