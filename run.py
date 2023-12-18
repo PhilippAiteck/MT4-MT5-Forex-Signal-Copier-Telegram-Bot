@@ -93,9 +93,14 @@ def ParseSignal(signal: str) -> dict:
 
     # extracts symbol from trade signal
     trade['Symbol'] = (signal[0].split())[-1]
+    if('(' in trade['Symbol'] or ')' in trade['Symbol']):
+        trade['Symbol'] = (signal[0].split())[-2]
+        logger.info(trade['Symbol'])
+        
     if('/' in trade['Symbol']):
         trade['Symbol'] = trade['Symbol'].replace('/','')
-        #logger.info(trade['Symbol'])
+        trade['Symbol'] = trade['Symbol']+"m"
+        logger.info(trade['Symbol'])
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
