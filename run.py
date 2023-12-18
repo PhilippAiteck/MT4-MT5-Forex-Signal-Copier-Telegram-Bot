@@ -111,7 +111,7 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = (signal[1].split())[-1]
 
     elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[1].split(' : '))[-1]
+        trade['Entry'] = (signal[2].split(' : '))[-1]
         #logger.info(trade['Entry'])
 
     else:
