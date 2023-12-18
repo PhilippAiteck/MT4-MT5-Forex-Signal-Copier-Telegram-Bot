@@ -182,11 +182,13 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         for takeProfit in trade['TP']:
             takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
+    logger.info(takeProfitPips)
+    
     # creates table with trade information
-    #table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
+    table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
     
     # sends user trade information and calcualted risk
-    #update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
+    update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
 
     return
 
@@ -345,7 +347,8 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'ACHAT'):
-                    #for 1 in 3:
+                    i = 1
+                    for i in 3:
                         result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
 
                 # executes buy limit order
@@ -364,7 +367,8 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'VENTE'):
-                    #for 1 in 3:
+                    i = 1
+                    for i in 3:
                         result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
 
                 # executes sell limit order
