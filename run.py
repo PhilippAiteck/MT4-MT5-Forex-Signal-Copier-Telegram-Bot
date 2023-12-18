@@ -183,10 +183,10 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
             takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
     # creates table with trade information
-    table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
+    #table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
     
     # sends user trade information and calcualted risk
-    update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
+    #update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
 
     return
 
