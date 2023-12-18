@@ -113,7 +113,7 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = float((signal[1].split())[-1])
     
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['StopLoss'] = trade['Entry']
+        trade['StopLoss'] = 0
         trade['TP'] = 0
 
     else:
@@ -158,12 +158,12 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
     else:
         multiplier = 0.0001
 
-    # calculates the stop loss in pips
-    stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
-    logger.info(stopLossPips)
+    # pips calculation
     takeProfitPips = []
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        stopLossPips = 0
+        
         if(balance <= 499):
             trade['PositionSize'] = 0.03
 
@@ -174,6 +174,9 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
             trade['PositionSize'] = 0.05
 
     else:
+        # calculates the stop loss in pips
+        stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
+
         # calculates the position size using stop loss and RISK FACTOR
         trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
 
@@ -181,8 +184,10 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         for takeProfit in trade['TP']:
             takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
+
+    logger.info(stopLossPips)
     logger.info(takeProfitPips)
-    
+
     # creates table with trade information
     table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
     
