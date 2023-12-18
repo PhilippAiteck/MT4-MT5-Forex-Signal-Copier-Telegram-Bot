@@ -182,7 +182,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         for takeProfit in trade['TP']:
             takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
-    logger.info(takeProfitPips)
+    #logger.info(takeProfitPips)
     
     # creates table with trade information
     table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
