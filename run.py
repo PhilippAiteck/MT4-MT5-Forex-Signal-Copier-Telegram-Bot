@@ -112,7 +112,7 @@ def ParseSignal(signal: str) -> dict:
 
     elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         trade['Entry'] = (signal[2].split(' : '))[-1]
-        logger.info(trade['Entry'])
+        #logger.info(trade['Entry'])
 
     else:
         trade['Entry'] = float((signal[1].split())[-1])
@@ -173,10 +173,10 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
             trade['PositionSize'] = 0.03
 
         elif(balance > 499 and balance < 1000):
-            trade['PositionSize'] = 0.04
+            trade['PositionSize'] = 0.06
 
         else:
-            trade['PositionSize'] = 0.05
+            trade['PositionSize'] = 0.09
 
     else:
         # calculates the stop loss in pips
@@ -357,7 +357,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
                 elif(trade['OrderType'] == 'ACHAT'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2))
+                        result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']))
 
                 # executes buy limit order
                 elif(trade['OrderType'] == 'Buy Limit'):
@@ -376,7 +376,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
                 elif(trade['OrderType'] == 'VENTE'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2))
+                        result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']))
 
                 # executes sell limit order
                 elif(trade['OrderType'] == 'Sell Limit'):
