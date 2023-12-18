@@ -160,14 +160,27 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
 
     # calculates the stop loss in pips
     stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
+    logger.info(stopLossPips)
 
-    # calculates the position size using stop loss and RISK FACTOR
-    trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
+    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        if(balance <= 499):
+            trade['PositionSize'] = 0.03
 
-    # calculates the take profit(s) in pips
-    takeProfitPips = []
-    for takeProfit in trade['TP']:
-        takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
+        elif(balance > 499 and balance < 1000):
+            trade['PositionSize'] = 0.04
+
+        else:
+            trade['PositionSize'] = 0.05
+
+
+    else:
+        # calculates the position size using stop loss and RISK FACTOR
+        trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
+
+        # calculates the take profit(s) in pips
+        takeProfitPips = []
+        for takeProfit in trade['TP']:
+            takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
     # creates table with trade information
     table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
@@ -317,7 +330,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                 trade['Entry'] = float(price['ask'])
 
         # produces a table with trade information
-        #GetTradeInformation(update, trade, account_information['balance'])
+        GetTradeInformation(update, trade, account_information['balance'])
             
         # checks if the user has indicated to enter trade
         if(enterTrade == True):
@@ -332,17 +345,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'ACHAT'):
-                    # account_information['balance'] = account_information['balance'].replace('$','')
-                    if(account_information['balance'] <= 499):
-                        trade['PositionSize'] = 0.02
-                        result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / 2, 2))
-
-                    elif(account_information['balance'] > 499 and account_information['balance'] < 1000):
-                        trade['PositionSize'] = 0.04
-                        result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
-
-                    else:
-                        trade['PositionSize'] = 0.05
+                    #for 1 in 3:
                         result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
 
                 # executes buy limit order
@@ -361,17 +364,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'VENTE'):
-                    # account_information['balance'] = account_information['balance'].replace('$','')
-                    if(account_information['balance'] <= 499):
-                        trade['PositionSize'] = 0.02
-                        result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / 2, 2))
-
-                    elif(account_information['balance'] > 499 and account_information['balance'] < 1000):
-                        trade['PositionSize'] = 0.04
-                        result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
-
-                    else:
-                        trade['PositionSize'] = 0.05
+                    #for 1 in 3:
                         result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
 
                 # executes sell limit order
