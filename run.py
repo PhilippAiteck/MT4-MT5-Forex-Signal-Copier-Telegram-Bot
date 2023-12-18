@@ -113,7 +113,7 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = float((signal[1].split())[-1])
     
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['StopLoss'] = 0
+        trade['StopLoss'] = trade['Entry']
         trade['TP'] = 0
 
     else:
@@ -161,9 +161,9 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
     # calculates the stop loss in pips
     stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
     logger.info(stopLossPips)
+    takeProfitPips = []
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        takeProfitPips = []
         if(balance <= 499):
             trade['PositionSize'] = 0.03
 
@@ -178,7 +178,6 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
 
         # calculates the take profit(s) in pips
-        takeProfitPips = []
         for takeProfit in trade['TP']:
             takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
@@ -347,8 +346,8 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'ACHAT'):
-                    i = 1
-                    for i in 3:
+                    #i = 1
+                    #for i in 3:
                         result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
 
                 # executes buy limit order
@@ -367,8 +366,8 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
 
                 elif(trade['OrderType'] == 'VENTE'):
-                    i = 1
-                    for i in 3:
+                    #i = 1
+                    #for i in 3:
                         result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / 3, 2))
 
                 # executes sell limit order
