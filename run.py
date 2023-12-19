@@ -438,7 +438,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
 
         for position in positions:
             # Calculate trade duration
-            #entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
+            entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
             #current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
             #duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
 
@@ -449,7 +449,8 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
             trade_info = f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
                          f"Profit: {position['profit']}\n" \
-                         f"Capture of Graph: [Add link or image here]"
+                         f"Entry Time: {entry_time}\n" \
+                         #f"Duration: {duration}\n" \
 
             update.effective_message.reply_text(trade_info)
 
@@ -584,12 +585,13 @@ def help(update: Update, context: CallbackContext) -> None:
     trade_example = "Example Trades 💴:\n\n"
     market_execution_example = "Market Execution:\nBUY GBPUSD\nEntry NOW\nSL 1.14336\nTP 1.28930\nTP 1.29845\n\n"
     limit_example = "Limit Execution:\nBUY LIMIT GBPUSD\nEntry 1.14480\nSL 1.14336\nTP 1.28930\n\n"
+    ongoing_trades = "Retrieves information about all ongoing trades.\n\n"
     note = "You are able to enter up to two take profits. If two are entered, both trades will use half of the position size, and one will use TP1 while the other uses TP2.\n\nNote: Use 'NOW' as the entry to enter a market execution trade."
 
     # sends messages to user
     update.effective_message.reply_text(help_message)
     update.effective_message.reply_text(commands)
-    update.effective_message.reply_text(trade_example + market_execution_example + limit_example + note)
+    update.effective_message.reply_text(trade_example + market_execution_example + limit_example + note + ongoing_trades)
 
     return
 
