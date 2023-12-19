@@ -438,7 +438,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
 
         for position in positions:
             # Calculate trade duration
-            #entry_time = datetime.utcfromtimestamp(position['time'])
+            entry_time = position['time'].strftime('%d-%m-%Y %H:%M:%S')
             current_time = datetime.utcnow()
             #duration = current_time - entry_time
 
@@ -456,8 +456,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
                          f"Profit: {position['profit']}\n" \
-                         f"Entry Time: {position['time']}\n" \
-                         f"CurrentTime Time: {current_time}\n" \
+                         f"Entry Time: {entry_time}\n" \
                          #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
 
             update.effective_message.reply_text(trade_info)
