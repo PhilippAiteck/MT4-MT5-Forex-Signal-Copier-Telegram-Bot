@@ -440,12 +440,12 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
             # Calculate trade duration
             entry_time = datetime.strftime(position['time'], '%d-%m-%Y %H:%M:%S')
             current_time = datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S')
-            duration = current_time - entry_time
+            #duration = current_time - entry_time
 
             # Extraire jours, heures, minutes et secondes de la durée
-            days = duration.days
-            hours, remainder = divmod(duration.seconds, 3600)  # 3600 secondes dans une heure
-            minutes, seconds = divmod(remainder, 60)  # 60 secondes dans une minute
+            #days = duration.days
+            #hours, remainder = divmod(duration.seconds, 3600)  # 3600 secondes dans une heure
+            #minutes, seconds = divmod(remainder, 60)  # 60 secondes dans une minute
 
             # Calculate trade duration
             #entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
@@ -457,7 +457,8 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
                          f"Volume: {position['volume']}\n" \
                          f"Profit: {position['profit']}\n" \
                          f"Entry Time: {entry_time}\n" \
-                         f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
+                         f"Current Time: {current_time}\n" \
+                         #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
 
             update.effective_message.reply_text(f'<pre>{trade_info}</pre>', parse_mode=ParseMode.HTML)
 
