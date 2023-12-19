@@ -577,9 +577,6 @@ def welcome(update: Update, context: CallbackContext) -> None:
     # sends messages to user
     update.effective_message.reply_text(welcome_message)
 
-    # attempts connection to MetaTrader and retreive ongoing trade
-    asyncio.run(GetOngoingTrades(update))
-
     return
 
 def help(update: Update, context: CallbackContext) -> None:
