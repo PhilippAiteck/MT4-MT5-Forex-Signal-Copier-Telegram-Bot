@@ -438,9 +438,9 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
 
         for position in positions:
             # Calculate trade duration
-            entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
-            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
+            #entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
+            #current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            #duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
 
             # Add more information or send the details to the user
             # f"Entry Time: {entry_time}\n" \
@@ -568,9 +568,6 @@ def welcome(update: Update, context: CallbackContext) -> None:
     
     # sends messages to user
     update.effective_message.reply_text(welcome_message)
-
-    # attempts connection to MetaTrader and retreive ongoing trade
-    asyncio.run(GetOngoingTrades(update, context))
 
     return
 
