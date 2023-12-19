@@ -438,7 +438,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
 
         for position in positions:
             # Calculate trade duration
-            entry_time = position['time'].strftime('%d-%m-%Y %H:%M:%S')
+            entry_time = datetime.strftime(position['time'], '%d-%m-%Y %H:%M:%S')
             current_time = datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S')
             duration = current_time - entry_time
 
