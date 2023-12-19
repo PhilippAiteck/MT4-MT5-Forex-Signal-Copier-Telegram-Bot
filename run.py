@@ -406,6 +406,68 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
     return
 
 
+async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
+    """Retrieves information about all ongoing trades.
+
+    Arguments:
+        update: update from Telegram
+    """
+    api = MetaApi(API_KEY)
+
+    try:
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
+
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
+
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
+
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
+
+        update.effective_message.reply_text("Successfully connected to MetaTrader! 👍🏾 \nRetrieving all ongoing trades ...")
+
+        # Fetch open positions
+        positions = await connection.get_positions()
+
+        if not positions:
+            update.effective_message.reply_text("No ongoing trades at the moment.")
+            return
+
+        for position in positions:
+            # Calculate trade duration
+            entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
+            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
+
+            # Add more information or send the details to the user
+            # f"Entry Time: {entry_time}\n" \
+            # f"Duration: {duration}\n" \
+
+            trade_info = f"Symbol: {position['symbol']}\n" \
+                         f"Volume: {position['volume']}\n" \
+                         f"Profit: {position['profit']}\n" \
+                         f"Capture of Graph: [Add link or image here]"
+
+            update.effective_message.reply_text(trade_info)
+
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        update.effective_message.reply_text(f"Failed to retrieve ongoing trades. Error: {error}")
+
+    return
+
+
 # Handler Functions
 def PlaceTrade(update: Update, context: CallbackContext) -> int:
     """Parses trade and places on MetaTrader account.   
@@ -515,6 +577,9 @@ def welcome(update: Update, context: CallbackContext) -> None:
     # sends messages to user
     update.effective_message.reply_text(welcome_message)
 
+    # attempts connection to MetaTrader and retreive ongoing trade
+    asyncio.run(GetOngoingTrades(update))
+
     return
 
 def help(update: Update, context: CallbackContext) -> None:
@@ -603,71 +668,6 @@ def Calculation_Command(update: Update, context: CallbackContext) -> int:
     update.effective_message.reply_text("Please enter the trade that you would like to calculate.")
 
     return CALCULATE
-
-async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
-    """Retrieves information about all ongoing trades.
-
-    Arguments:
-        update: update from Telegram
-    """
-    api = MetaApi(API_KEY)
-
-    try:
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        initial_state = account.state
-        deployed_states = ['DEPLOYING', 'DEPLOYED']
-
-        if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
-            logger.info('Deploying account')
-            await account.deploy()
-
-        logger.info('Waiting for API server to connect to broker ...')
-        await account.wait_connected()
-
-        # connect to MetaApi API
-        connection = account.get_rpc_connection()
-        await connection.connect()
-
-        # wait until terminal state synchronized to the local state
-        logger.info('Waiting for SDK to synchronize to terminal state ...')
-        await connection.wait_synchronized()
-
-        # obtains account information from MetaTrader server
-        account_information = await connection.get_account_information()
-        #logger.info(account_information['balance'])
-
-        update.effective_message.reply_text("Successfully connected to MetaTrader! 👍🏾")
-
-        # Fetch open positions
-        positions = await connection.get_positions()
-
-        if not positions:
-            update.effective_message.reply_text("No ongoing trades at the moment.")
-            return
-
-        for position in positions:
-            # Calculate trade duration
-            entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
-            current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
-
-            # Add more information or send the details to the user
-            # f"Entry Time: {entry_time}\n" \
-            # f"Duration: {duration}\n" \
-
-            trade_info = f"Symbol: {position['symbol']}\n" \
-                         f"Volume: {position['volume']}\n" \
-                         f"Profit: {position['profit']}\n" \
-                         f"Capture of Graph: [Add link or image here]"
-
-            update.effective_message.reply_text(trade_info)
-
-    except Exception as error:
-        logger.error(f'Error: {error}')
-        update.effective_message.reply_text(f"Failed to retrieve ongoing trades. Error: {error}")
-
-    return
 
 
 def main() -> None:
