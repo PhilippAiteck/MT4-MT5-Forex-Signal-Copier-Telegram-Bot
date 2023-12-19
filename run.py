@@ -250,14 +250,6 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
     return table
 
 
-async def GetOpenTradeIDs(connection):
-    try:
-        positions = await connection.get_positions()
-        trade_ids = [position['id'] for position in positions]
-        return trade_ids
-    except Exception as e:
-        return str(e)
-
 
 async def CloseTrade(connection, trade_id):
     try:
@@ -669,6 +661,18 @@ def Calculation_Command(update: Update, context: CallbackContext) -> int:
 
     return CALCULATE
 
+def GetOpenTradeIDs(update: Update, context: CallbackContext):
+    """Retrieves information about all ongoing trades.
+
+    Arguments:
+        update: update from Telegram
+    """
+
+    # attempts connection to MetaTrader and retreive ongoing trade
+    asyncio.run(GetOngoingTrades(update, context))
+
+    return
+
 
 def main() -> None:
     """Runs the Telegram bot."""
@@ -684,9 +688,6 @@ def main() -> None:
     # help command handler
     dp.add_handler(CommandHandler("help", help))
 
-    # command to receive information about all ongoing trades.
-    dp.add_handler(CommandHandler("ongoing_trades", GetOngoingTrades))
-    
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("trade", Trade_Command), CommandHandler("calculate", Calculation_Command)],
         states={
@@ -696,7 +697,11 @@ def main() -> None:
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
-    
+
+    # command to receive information about all ongoing trades.
+    dp.add_handler(CommandHandler("ongoing_trades", GetOpenTradeIDs))
+    #dp.add_handler(CommandHandler("open_trades", GetOpenTradeIDs))
+
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
