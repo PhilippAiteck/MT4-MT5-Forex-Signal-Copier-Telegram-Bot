@@ -103,8 +103,8 @@ def ParseSignal(signal: str) -> dict:
         #logger.info(trade['Symbol'])
     
     # checks if the symbol is valid, if not, returns an empty dictionary
-    if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
-        return {}
+    #if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
+    #    return {}
     
     # checks wheter or not to convert entry to float because of market exectution option ("NOW")
     if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
@@ -451,7 +451,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
             trade_info = f"{position['type']}\n" \
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
-                         f"Profit: <b>{position['profit']}</b>\n" \
+                         f"Profit: {position['profit']}\n" \
                          f"Entry Time: {entry_time}\n" \
                          #f"Current Time: {current_time}\n" \
                          #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
