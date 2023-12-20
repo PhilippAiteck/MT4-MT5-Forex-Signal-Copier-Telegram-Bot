@@ -439,7 +439,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
         for position in positions:
             # Calculate trade duration
             entry_time = position['time'].strftime('%d-%m-%Y %H:%M:%S')
-            current_time = datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S')
+            #current_time = datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S')
             #duration = current_time - entry_time
 
             # Extraire jours, heures, minutes et secondes de la durée
@@ -448,15 +448,15 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
             #minutes, seconds = divmod(remainder, 60)  # 60 secondes dans une minute
 
 
-            trade_info = f"Order: {position['type']}\n" \
+            trade_info = f"{position['type']}\n" \
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
-                         f"Profit: {position['profit']}\n" \
+                         f"Profit: <b>{position['profit']}</b>\n" \
                          f"Entry Time: {entry_time}\n" \
-                         f"Current Time: {current_time}\n" \
+                         #f"Current Time: {current_time}\n" \
                          #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
 
-            update.effective_message.reply_text(trade_info)
+            update.effective_message.reply_text(f'<pre>{trade_info}</pre>', parse_mode=ParseMode.HTML)
 
     except Exception as error:
         logger.error(f'Error: {error}')
