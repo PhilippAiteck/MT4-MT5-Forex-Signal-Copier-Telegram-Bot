@@ -438,8 +438,8 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
 
         for position in positions:
             # Calculate trade duration
-            #entry_time = datetime.utcfromtimestamp(position['time'])
-            current_time = datetime.utcnow()
+            entry_time = position['time'].strftime('%d-%m-%Y %H:%M:%S')
+            current_time = datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S')
             #duration = current_time - entry_time
 
             # Extraire jours, heures, minutes et secondes de la durée
@@ -447,17 +447,13 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
             #hours, remainder = divmod(duration.seconds, 3600)  # 3600 secondes dans une heure
             #minutes, seconds = divmod(remainder, 60)  # 60 secondes dans une minute
 
-            # Calculate trade duration
-            #entry_time = datetime.utcfromtimestamp(position['time']).strftime('%Y-%m-%d %H:%M:%S')
-            #current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-            #duration = datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S') - datetime.strptime(entry_time, '%Y-%m-%d %H:%M:%S')
 
             trade_info = f"Order: {position['type']}\n" \
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
                          f"Profit: {position['profit']}\n" \
-                         f"Entry Time: {position['time']}\n" \
-                         f"CurrentTime Time: {current_time}\n" \
+                         f"Entry Time: {entry_time}\n" \
+                         f"Current Time: {current_time}\n" \
                          #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
 
             update.effective_message.reply_text(trade_info)
