@@ -302,7 +302,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
         if account_information['broker'] == 'AXSE Brokerage Ltd.':
             trade['Symbol'] = trade['Symbol']+"_raw"
-            logger.info(account_information['Symbol'])
+            logger.info(trade['Symbol'])
 
 
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
