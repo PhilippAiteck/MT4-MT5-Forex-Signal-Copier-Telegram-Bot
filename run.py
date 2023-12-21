@@ -99,7 +99,6 @@ def ParseSignal(signal: str) -> dict:
         
     if('/' in trade['Symbol']):
         trade['Symbol'] = trade['Symbol'].replace('/','')
-        trade['Symbol'] = trade['Symbol']+"m"
         #logger.info(trade['Symbol'])
     
     # checks if the symbol is valid, if not, returns an empty dictionary
@@ -300,7 +299,11 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
         # obtains account information from MetaTrader server
         account_information = await connection.get_account_information()
-        #logger.info(account_information['balance'])
+
+        if account_information['broker'] == 'AXSE Brokerage Ltd.':
+            trade['Symbol'] = trade['Symbol']+"_raw"
+            logger.info(account_information['Symbol'])
+
 
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
 
