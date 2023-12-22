@@ -109,25 +109,27 @@ def ParseSignal(signal: str) -> dict:
     if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
         trade['Entry'] = (signal[1].split())[-1]
 
-    elif(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+    else:
+        trade['Entry'] = float((signal[1].split())[-1])
+
+    trade['StopLoss'] = float((signal[2].split())[-1])
+    trade['TP'] = [float((signal[3].split())[-1])]
+
+    # checks if there's a fourth line and parses it for TP2
+    if(len(signal) > 4):
+        trade['TP'].append(float(signal[4].split()[-1]))
+        
+    # checks if there's a fith line and parses it for TP3
+    if(len(signal) > 5):
+        trade['TP'].append(float(signal[5].split()[-1]))
+    
+    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         trade['Entry'] = (signal[2].split(' : '))[-1]
         trade['StopLoss'] = 0
         trade['TP'] = [0, 0, 0]
         #logger.info(trade['Entry'])
 
-    else:
-        trade['Entry'] = float((signal[1].split())[-1])
-        trade['StopLoss'] = float((signal[2].split())[-1])
-        trade['TP'] = [float((signal[3].split())[-1])]
 
-        # checks if there's a fourth line and parses it for TP2
-        if(len(signal) > 4):
-            trade['TP'].append(float(signal[4].split()[-1]))
-            
-        # checks if there's a fith line and parses it for TP3
-        if(len(signal) > 5):
-            trade['TP'].append(float(signal[5].split()[-1]))
-    
     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
 
