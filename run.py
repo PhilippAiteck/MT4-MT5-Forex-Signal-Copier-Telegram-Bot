@@ -115,6 +115,13 @@ def ParseSignal(signal: str) -> dict:
     trade['StopLoss'] = float((signal[2].split())[-1])
     trade['TP'] = [float((signal[3].split())[-1])]
 
+    # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
+    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        trade['Entry'] = (signal[2].split(' : '))[-1]
+        trade['StopLoss'] = 0
+        trade['TP'] = [0, 0, 0]
+        #logger.info(trade['Entry'])
+
     # checks if there's a fourth line and parses it for TP2
     if(len(signal) > 4):
         trade['TP'].append(float(signal[4].split()[-1]))
@@ -122,13 +129,6 @@ def ParseSignal(signal: str) -> dict:
     # checks if there's a fith line and parses it for TP3
     if(len(signal) > 5):
         trade['TP'].append(float(signal[5].split()[-1]))
-    
-    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[2].split(' : '))[-1]
-        trade['StopLoss'] = 0
-        trade['TP'] = [0, 0, 0]
-        #logger.info(trade['Entry'])
-
 
     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
@@ -322,16 +322,16 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
 
         # checks if the order is a market execution to get the current price of symbol
-        if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
-            price = await connection.get_symbol_price(symbol=trade['Symbol'])
+        #if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
+        price = await connection.get_symbol_price(symbol=trade['Symbol'])
 
-            # uses bid price if the order type is a buy
-            if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
-                trade['Entry'] = float(price['bid'])
+        # uses bid price if the order type is a buy
+        if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
+            trade['Entry'] = float(price['bid'])
 
-            # uses ask price if the order type is a sell
-            if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
-                trade['Entry'] = float(price['ask'])
+        # uses ask price if the order type is a sell
+        if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
+            trade['Entry'] = float(price['ask'])
 
         # produces a table with trade information
         GetTradeInformation(update, trade, account_information['balance'])
