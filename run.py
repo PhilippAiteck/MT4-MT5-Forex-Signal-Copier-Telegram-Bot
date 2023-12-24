@@ -115,7 +115,7 @@ def ParseSignal(signal: str) -> dict:
         trade['Entry'] = float((trade['Entry'].split('-'))[0])
 
         trade['StopLoss'] = float(trade['Entry'] - 450)
-        trade['TP'] = [trade['Entry'] + 120, trade['Entry'] + 450, 0]
+        trade['TP'] = [trade['Entry'] + 120, trade['Entry'] + 450, trade['Entry'] + 2200]
 
     else:
         trade['Entry'] = float((signal[1].split())[-1])
@@ -165,7 +165,8 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
     takeProfitPips = []
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        stopLossPips = 0
+        # calculates the stop loss in pips
+        stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
         
         if(balance <= 499):
             trade['PositionSize'] = 0.03
