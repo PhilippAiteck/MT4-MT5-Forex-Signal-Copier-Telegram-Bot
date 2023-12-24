@@ -40,10 +40,10 @@ CALCULATE, TRADE, DECISION = range(3)
 
 # allowed FX symbols
 SYMBOLS = ['EURUSD.i', 'USDJPY.i', 'GBPUSD.i', 'USDCHF.i', 'AUDUSD.i', 'USDCAD.i', 'NZDUSD.i', 'EURGBP.i', 'EURJPY.i', 'GBPJPY.i', 'AUDJPY.i', 'NZDJPY.i', 'EURAUD.i', 'GBPAUD.i', 'EURNZD.i', 'GBPNZD.i', 'EURCAD.i', 'GBPCAD.i', 'AUDCAD.i', 'NZDCAD.i', 'EURCHF.i', 'GBPCHF.i', 'AUDCHF.i', 'NZDCHF.i', 'USDSEK.i', 'USDDKK.i', 'USDNOK.i', 'USDTRY.i', 'USDMXN.i', 'USDZAR.i', 'EURSEK.i', 'EURDKK.i', 'EURNOK.i', 'EURTRY.i', 'EURMXN.i', 'EURZAR.i', 'GBPSEK.i', 'GBPDKK.i', 'GBPNOK.i', 'GBPTRY.i', 'GBPMXN.i', 'GBPZAR.i', 'AUDSEK.i', 'AUDDKK.i', 'AUDNOK.i', 'AUDTRY.i', 'AUDMXN.i',  'AUDNZD.i','AUDZAR.i', 'CADJPY.i', 'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'XAUEUR', 'XAUGBP', 'XAGEUR', 'XAGGBP', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD', 'XPTUSD.', 'GOLD']
-SPECIALSYMBOLS = ['US500Cash', 'US30Cash', 'US100Cash', 'GER40Cash', 'UK100Cash', 'AUS200Cash', 'FRA40Cash', 'JP225Cash', 'SPX500.b', 'US30.b', 'NDX100.b', 'GER30.b', 'UK100.b', 'AUS200.b', 'FRA40.b', 'JPN225.b', 'SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'US100', 'GER30', 'UK100', 'AUS200', 'FRA40', 'JP225', 'HK50', 'IN50', 'CN50', 'SG30', 'BTCUSD.b', 'ETHUSD.b', 'XRPUSD.b', 'LTCUSD.b', 'BCHUSD.b', 'ADAUSD.b', 'XLMUSD.b', 'EOSUSD.b', 'XMRUSD.b', 'DASHUSD.b', 'ZECUSD.b', 'BNBUSD.b', 'XTZUSD.b', 'ATOMUSD.b', 'ONTUSD.b', 'NEOUSD.b', 'VETUSD.b', 'ICXUSD.b', 'QTUMUSD.b', 'ZRXUSD.b', 'DOGEUSD.b', 'LINKUSD.b', 'HTUSD.b', 'ETCUSD.b', 'OMGUSD.b', 'NANOUSD.b', 'LSKUSD.b', 'WAVESUSD.b', 'REPUSD.b', 'MKRUSD.b', 'GNTUSD.b', 'LOOMUSD.b', 'MANAUSD.b', 'KNCUSD.b', 'CVCUSD.b', 'BATUSD.b', 'NEXOUSD.b', 'DCRUSD.b', 'PAXUSD.b', 'TUSDUSD.b', 'USDCUSD.b', 'USDTUSD.b', 'BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD', 'BTCUSDm']
+SPECIALSYMBOLS = ['US500Cash', 'US30Cash', 'US100Cash', 'GER40Cash', 'UK100Cash', 'AUS200Cash', 'FRA40Cash', 'JP225Cash', 'SPX500.b', 'US30.b', 'NDX100.b', 'GER30.b', 'UK100.b', 'AUS200.b', 'FRA40.b', 'JPN225.b', 'SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'US100', 'GER30', 'UK100', 'AUS200', 'FRA40', 'JP225', 'HK50', 'IN50', 'CN50', 'SG30', 'BTCUSD_raw', 'ETHUSD_raw', 'XRPUSD_raw', 'LTCUSD_raw', 'BTCUSD.b', 'ETHUSD.b', 'XRPUSD.b', 'LTCUSD.b', 'BCHUSD.b', 'ADAUSD.b', 'XLMUSD.b', 'EOSUSD.b', 'XMRUSD.b', 'DASHUSD.b', 'ZECUSD.b', 'BNBUSD.b', 'XTZUSD.b', 'ATOMUSD.b', 'ONTUSD.b', 'NEOUSD.b', 'VETUSD.b', 'ICXUSD.b', 'QTUMUSD.b', 'ZRXUSD.b', 'DOGEUSD.b', 'LINKUSD.b', 'HTUSD.b', 'ETCUSD.b', 'OMGUSD.b', 'NANOUSD.b', 'LSKUSD.b', 'WAVESUSD.b', 'REPUSD.b', 'MKRUSD.b', 'GNTUSD.b', 'LOOMUSD.b', 'MANAUSD.b', 'KNCUSD.b', 'CVCUSD.b', 'BATUSD.b', 'NEXOUSD.b', 'DCRUSD.b', 'PAXUSD.b', 'TUSDUSD.b', 'USDCUSD.b', 'USDTUSD.b', 'BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD', 'BTCUSDm']
 
 # RISK FACTOR
-RISK_FACTOR = float(os.environ.get("RISK_FACTOR"))
+RISK_FACTOR = float(os.environ.get('RISK_FACTOR', '0.01'))
 
 # Helper Functions
 def ParseSignal(signal: str) -> dict:
@@ -106,29 +106,30 @@ def ParseSignal(signal: str) -> dict:
     #    return {}
     
     # checks wheter or not to convert entry to float because of market exectution option ("NOW")
-    if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
-        trade['Entry'] = (signal[1].split())[-1]
+    #if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
+    #    trade['Entry'] = (signal[1].split())[-1]
+
+    # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
+    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
+        trade['Entry'] = float((trade['Entry'].split('-'))[0])
+
+        trade['StopLoss'] = float(trade['Entry'] - 450)
+        trade['TP'] = [trade['Entry'] + 120, trade['Entry'] + 450, 0]
 
     else:
         trade['Entry'] = float((signal[1].split())[-1])
 
-    trade['StopLoss'] = float((signal[2].split())[-1])
-    trade['TP'] = [float((signal[3].split())[-1])]
+        trade['StopLoss'] = float((signal[2].split())[-1])
+        trade['TP'] = [float((signal[3].split())[-1])]
 
-    # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
-    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Entry'] = (signal[2].split(' : '))[-1]
-        trade['StopLoss'] = 0
-        trade['TP'] = [0, 0, 0]
-        #logger.info(trade['Entry'])
-
-    # checks if there's a fourth line and parses it for TP2
-    if(len(signal) > 4):
-        trade['TP'].append(float(signal[4].split()[-1]))
-        
-    # checks if there's a fith line and parses it for TP3
-    if(len(signal) > 5):
-        trade['TP'].append(float(signal[5].split()[-1]))
+        # checks if there's a fourth line and parses it for TP2
+        if(len(signal) > 4):
+            trade['TP'].append(float(signal[4].split()[-1]))
+            
+        # checks if there's a fith line and parses it for TP3
+        if(len(signal) > 5):
+            trade['TP'].append(float(signal[5].split()[-1]))
 
     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
@@ -182,9 +183,9 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
         # calculates the position size using stop loss and RISK FACTOR
         trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
 
-        # calculates the take profit(s) in pips
-        for takeProfit in trade['TP']:
-            takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
+    # calculates the take profit(s) in pips
+    for takeProfit in trade['TP']:
+        takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
 
     #logger.info(stopLossPips)
@@ -344,13 +345,9 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
             try:
                 # executes buy market execution order
-                if(trade['OrderType'] == 'Buy'):
+                if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
                     for takeProfit in trade['TP']:
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
-
-                elif(trade['OrderType'] == 'ACHAT'):
-                    for takeProfit in trade['TP']:
-                        result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']))
 
                 # executes buy limit order
                 elif(trade['OrderType'] == 'Buy Limit'):
@@ -363,13 +360,9 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_stop_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
 
                 # executes sell market execution order
-                elif(trade['OrderType'] == 'Sell'):
+                elif(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
                     for takeProfit in trade['TP']:
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
-
-                elif(trade['OrderType'] == 'VENTE'):
-                    for takeProfit in trade['TP']:
-                        result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']))
 
                 # executes sell limit order
                 elif(trade['OrderType'] == 'Sell Limit'):
