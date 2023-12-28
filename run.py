@@ -256,12 +256,44 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def CloseTrade(connection, trade_id):
+async def CloseTrade(update: Update, trade_id) -> None:
+    """Close ongoing trades.
+
+    Arguments:
+        update: update from Telegram
+    """
+    api = MetaApi(API_KEY)
+
     try:
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
+
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
+
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
+
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
+
+        update.effective_message.reply_text("Successfully connected to MetaTrader! 👍🏾 \Ready to close some ongoing trades ...")
+
         result = await connection.close_order(trade_id)
-        return result
-    except Exception as e:
-        return str(e)
+
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
+
+    return
 
 
 async def MoveToBreakEven(connection, trade_id, break_even_price):
@@ -350,11 +382,14 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             # enters trade on to MetaTrader account
             update.effective_message.reply_text("Entering trade on MetaTrader Account ... 👨🏾‍💻")
 
+            tradeid = {}
+
             try:
                 # executes buy market execution order
                 if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
                     for takeProfit in trade['TP']:
                         result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
+                        tradeid.append(result['positionId'])
 
                 # executes buy limit order
                 elif(trade['OrderType'] == 'Buy Limit'):
@@ -370,6 +405,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                 elif(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
                     for takeProfit in trade['TP']:
                         result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
+                        tradeid.append(result['positionId'])
 
                 # executes sell limit order
                 elif(trade['OrderType'] == 'Sell Limit'):
@@ -396,7 +432,8 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         logger.error(f'Error: {error}')
         update.effective_message.reply_text(f"There was an issue with the connection 😕\n\nError Message:\n{error}")
     
-    return
+    print(tradeid)
+    return tradeid
 
 
 async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
@@ -475,36 +512,40 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
     """
 
+    signalInfos = {}
     # checks if the trade has already been parsed or not
-    if(context.user_data['trade'] == None):
+    #if(context.user_data['trade'] == None):
 
-        try: 
-            # parses signal from Telegram message
-            trade = ParseSignal(update.effective_message.text)
-            
-            # checks if there was an issue with parsing the trade
-            if(not(trade)):
-                raise Exception('Invalid Trade')
-
-            # sets the user context trade equal to the parsed trade
-            context.user_data['trade'] = trade
-            update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+    try: 
+        # parses signal from Telegram message
+        trade = ParseSignal(update.effective_message.text)
         
-        except Exception as error:
-            logger.error(f'Error: {error}')
-            errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL\nEntry \nSL \nTP \n\nOr use the /cancel to command to cancel this action."
-            update.effective_message.reply_text(errorMessage)
+        # checks if there was an issue with parsing the trade
+        if(not(trade)):
+            raise Exception('Invalid Trade')
 
-            # returns to TRADE state to reattempt trade parsing
-            return TRADE
+        # sets the user context trade equal to the parsed trade
+        context.user_data['trade'] = trade
+        update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+        signalInfos['message_id'] = update.effective_message.message_id
+        logger.info(signalInfos['message_id'])
+
+    
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL\nEntry \nSL \nTP \n\nOr use the /cancel to command to cancel this action."
+        update.effective_message.reply_text(errorMessage)
+
+        # returns to TRADE state to reattempt trade parsing
+        return TRADE
     
     # attempts connection to MetaTrader and places trade
-    asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    #asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
     
     # removes trade from user context data
     context.user_data['trade'] = None
 
-    #return ConversationHandler.END
+    return ConversationHandler.END
 
 def CalculateTrade(update: Update, context: CallbackContext) -> int:
     """Parses trade and places on MetaTrader account.   
@@ -559,6 +600,52 @@ def unknown_command(update: Update, context: CallbackContext) -> None:
     update.effective_message.reply_text("Unknown command. Use /trade to place a trade or /calculate to find information for a trade. You can also use the /help command to view instructions for this bot.")
 
     return
+
+def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
+    """Starts process of parsing TP signal and closing trade on MetaTrader account.
+
+    Arguments:
+        update: update from Telegram
+        context: CallbackContext object that stores commonly used objects in handler callbacks
+
+    """
+    logger.info(update)
+    logger.info(update.effective_message.reply_to_message.message_id)
+
+    # checks if the trade has already been parsed or not
+    #if(context.user_data['trade'] == None):
+
+    try: 
+
+        trade = {}
+
+        # parses signal from Telegram message and determines the trade to close 
+        if('TP1'.lower() in update.effective_message.text.lower()):
+            trade_id = 'Buy Limit'
+        
+        # checks if there was an issue with parsing the trade
+        if(not(trade)):
+            raise Exception('Invalid Signal')
+
+        # sets the user context trade equal to the parsed trade
+        context.user_data['trade'] = trade
+        update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+    
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL\nEntry \nSL \nTP \n\nOr use the /cancel to command to cancel this action."
+        update.effective_message.reply_text(errorMessage)
+
+        # returns to TRADE state to reattempt trade parsing
+        return TRADE
+    
+    # attempts connection to MetaTrader and places trade
+    asyncio.run(CloseTrade(update, trade_id))
+    
+    # removes trade from user context data
+    context.user_data['trade'] = None
+
+    return ConversationHandler.END
 
 
 # Command Handlers
@@ -708,9 +795,16 @@ def main() -> None:
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
-    # message handler for all messages that are not included in conversation handler
-    dp.add_handler(MessageHandler(Filters.text, unknown_command))
+    # message handler for entering trade
+    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bBTC/USD\b"), PlaceTrade))
+    # message handler for Take Profit
+    #dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bPRENEZ LE TP\b"), TakeProfitTrade))
+    # message handler for edit SL
+    #dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bMETTRE LE SL\b"), PlaceTrade))
 
+    # message handler for all messages that are not included in conversation handler
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, TakeProfitTrade))
+ 
     # log all errors
     dp.add_error_handler(error)
     
