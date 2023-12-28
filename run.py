@@ -432,7 +432,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         logger.error(f'Error: {error}')
         update.effective_message.reply_text(f"There was an issue with the connection 😕\n\nError Message:\n{error}")
     
-    print(tradeid)
+    logger.info(tradeid)
     return tradeid
 
 
@@ -524,12 +524,9 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         if(not(trade)):
             raise Exception('Invalid Trade')
 
-        # sets the user context trade equal to the parsed trade
+        # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-        signalInfos['message_id'] = update.effective_message.message_id
-        logger.info(signalInfos['message_id'])
-
     
     except Exception as error:
         logger.error(f'Error: {error}')
@@ -538,9 +535,15 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
 
         # returns to TRADE state to reattempt trade parsing
         return TRADE
-    
+
+    signalInfos['message_id'] = update.effective_message.message_id
+    logger.info(signalInfos['message_id'])
+
+    #result = {}
     # attempts connection to MetaTrader and places trade
-    #asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+
+    #result = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
     
     # removes trade from user context data
     context.user_data['trade'] = None
