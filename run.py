@@ -552,14 +552,15 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     # extraction of the signal messageID's 
-    signalInfos['message_id'] = update.effective_message.message_id
-    update.effective_message.reply_text(signalInfos['message_id'])
+    signalInfos['messageid_tradeid'] = update.effective_message.message_id
 
     # attempts connection to MetaTrader and places trade
-    #asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
-
     tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
-    update.effective_message.reply_text(tradeid)
+
+    # adding tradeid values in signalInfos
+    signalInfos['messageid_tradeid'].extend(tradeid)
+
+    update.effective_message.reply_text(signalInfos)
 
     # removes trade from user context data
     context.user_data['trade'] = None
