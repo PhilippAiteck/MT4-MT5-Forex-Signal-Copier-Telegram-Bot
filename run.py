@@ -143,13 +143,14 @@ def ParseSignal(signal: str) -> dict:
 
     return trade
 
-def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
+def GetTradeInformation(update: Update, trade: dict, balance: float, currency: str) -> None:
     """Calculates information from given trade including stop loss and take profit in pips, posiition size, and potential loss/profit.
 
     Arguments:
         update: update from Telegram
         trade: dictionary that stores trade information
         balance: current balance of the MetaTrader account
+        currency: currency of the MetaTrader account
     """
 
     # calculates the stop loss in pips
@@ -175,15 +176,26 @@ def GetTradeInformation(update: Update, trade: dict, balance: float) -> None:
     stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        
-        if(balance <= 499):
-            trade['PositionSize'] = 0.03
+        if currency == 'XOF':
+            if(balance <= 296000):
+                trade['PositionSize'] = 0.03
 
-        elif(balance > 499 and balance < 1000):
-            trade['PositionSize'] = 0.06
+            elif(balance > 296000 and balance < 593000):
+                trade['PositionSize'] = 0.06
+
+            else:
+                trade['PositionSize'] = 0.09
 
         else:
-            trade['PositionSize'] = 0.09
+
+            if(balance <= 499):
+                trade['PositionSize'] = 0.03
+
+            elif(balance > 499 and balance < 1000):
+                trade['PositionSize'] = 0.06
+
+            else:
+                trade['PositionSize'] = 0.09
 
     else:
 
@@ -374,7 +386,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             trade['Entry'] = float(price['ask'])
 
         # produces a table with trade information
-        GetTradeInformation(update, trade, account_information['balance'])
+        GetTradeInformation(update, trade, account_information['balance'], account_information['currency'])
             
         # checks if the user has indicated to enter trade
         if(enterTrade == True):
@@ -382,7 +394,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             # enters trade on to MetaTrader account
             update.effective_message.reply_text("Entering trade on MetaTrader Account ... 👨🏾‍💻")
 
-            tradeid = {}
+            tradeid = []
 
             try:
                 # executes buy market execution order
@@ -419,6 +431,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                 
                 # sends success message to user
                 update.effective_message.reply_text("Trade entered successfully! 💰")
+                update.effective_message.reply_text(tradeid)
                 
                 # prints success message to console
                 logger.info('\nTrade entered successfully!')
@@ -512,7 +525,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
     """
 
-    signalInfos = {}
+    signalInfos = []
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
