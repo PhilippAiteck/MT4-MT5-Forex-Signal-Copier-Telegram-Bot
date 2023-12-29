@@ -525,7 +525,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
     """
 
-    signalInfos = []
+    signalInfos = {}
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
