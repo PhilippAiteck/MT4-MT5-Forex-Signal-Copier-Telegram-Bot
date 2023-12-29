@@ -567,7 +567,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     # removes trade from user context data
     context.user_data['trade'] = None
 
-    ConversationHandler.END
+    #ConversationHandler.END
 
     return signalInfos
 
