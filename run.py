@@ -445,7 +445,6 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         logger.error(f'Error: {error}')
         update.effective_message.reply_text(f"There was an issue with the connection 😕\n\nError Message:\n{error}")
     
-    logger.info(tradeid)
     return tradeid
 
 
@@ -503,6 +502,7 @@ async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
                          f"Profit: {position['profit']}\n" \
+                         f"ORDER ID: {position['id']}\n\n" \
                          f"Entry Time: {entry_time}\n" \
                          #f"Current Time: {current_time}\n" \
                          #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
@@ -548,9 +548,10 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
 
         # returns to TRADE state to reattempt trade parsing
         return TRADE
-
+    
+    # extraction of the signal messageID's 
     signalInfos['message_id'] = update.effective_message.message_id
-    logger.info(signalInfos['message_id'])
+    update.effective_message.reply_text(update.effective_message.message_id)
 
     #result = {}
     # attempts connection to MetaTrader and places trade
