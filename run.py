@@ -429,9 +429,11 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                     for takeProfit in trade['TP']:
                         result = await connection.create_stop_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
                 
+                # prints PositionID to user
+                update.effective_message.reply_text('PositionID: {}\n'.format(tradeid))
+
                 # sends success message to user
                 update.effective_message.reply_text("Trade entered successfully! 💰")
-                update.effective_message.reply_text(tradeid)
                 
                 # prints success message to console
                 logger.info('\nTrade entered successfully!')
@@ -526,7 +528,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     """
 
     signalInfos = {}
-    tradeid = {}
+    tradeid = []
 
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
