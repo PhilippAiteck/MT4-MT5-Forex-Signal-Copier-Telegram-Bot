@@ -526,6 +526,8 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     """
 
     signalInfos = {}
+    tradeid = {}
+
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
@@ -551,14 +553,14 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     
     # extraction of the signal messageID's 
     signalInfos['message_id'] = update.effective_message.message_id
-    update.effective_message.reply_text(update.effective_message.message_id)
+    update.effective_message.reply_text(signalInfos['message_id'])
 
-    #result = {}
     # attempts connection to MetaTrader and places trade
-    asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    #asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
 
-    #result = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
-    
+    tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    update.effective_message.reply_text(tradeid)
+
     # removes trade from user context data
     context.user_data['trade'] = None
 
@@ -828,6 +830,8 @@ def main() -> None:
     # listens for incoming updates from Telegram
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
+
+    #threading.Timer(5.0, update.effective_message.reply_text(update.effective_message.message_id)).start()
 
     return
 
