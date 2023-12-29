@@ -641,6 +641,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     #if(context.user_data['trade'] == None):
 
     signalInfos = PlaceTrade()
+    update.effective_message.reply_text(signalInfos)
     trade_id = ''
 
     try: 
@@ -824,9 +825,9 @@ def main() -> None:
     dp.add_handler(conv_handler)
 
     # message handler for entering trade
-    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bBTC/USD\b"), PlaceTrade))
+    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bBTC/USD\b\S*"), PlaceTrade))
     # message handler for Take Profit
-    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bPRENEZ LE TP\b"), TakeProfitTrade))
+    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bPRENEZ LE TP\b\S*"), TakeProfitTrade))
     # message handler for edit SL
     #dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bMETTRE LE SL\b"), PlaceTrade))
 
