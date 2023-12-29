@@ -430,7 +430,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
                         result = await connection.create_stop_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
                 
                 # prints PositionID to user
-                update.effective_message.reply_text('PositionID: {}\n'.format(tradeid))
+                update.effective_message.reply_text('PositionID: '+ tradeid)
 
                 # sends success message to user
                 update.effective_message.reply_text("Trade entered successfully! 💰")
@@ -527,7 +527,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
     """
 
-    signalInfos = {}
+    signalInfos = {'messageid_tradeid': []}
     tradeid = []
 
     # checks if the trade has already been parsed or not
@@ -554,7 +554,9 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     # extraction of the signal messageID's 
-    signalInfos['messageid_tradeid'] = update.effective_message.message_id
+    signalInfos = {'messageid_tradeid': [update.effective_message.message_id]}
+
+    #signalInfos['messageid_tradeid'] = update.effective_message.message_id
 
     # attempts connection to MetaTrader and places trade
     tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
