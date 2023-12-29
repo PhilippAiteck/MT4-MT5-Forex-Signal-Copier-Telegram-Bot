@@ -297,9 +297,9 @@ async def CloseTrade(update: Update, trade_id) -> None:
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        update.effective_message.reply_text("Successfully connected to MetaTrader! 👍🏾 \Ready to close some ongoing trades ...")
-
         result = await connection.close_order(trade_id)
+
+        update.effective_message.reply_text(f"Take Profit Successfully executed! 💰 {result}")
 
     except Exception as error:
         logger.error(f'Error: {error}')
@@ -564,12 +564,14 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     # adding tradeid values in signalInfos
     signalInfos['messageid_tradeid'].extend(tradeid)
 
-    update.effective_message.reply_text(signalInfos)
+    update.effective_message.reply_text(signalInfos['messageid_tradeid'][0])
 
     # removes trade from user context data
     context.user_data['trade'] = None
 
-    return ConversationHandler.END
+    ConversationHandler.END
+
+    return signalInfos
 
 def CalculateTrade(update: Update, context: CallbackContext) -> int:
     """Parses trade and places on MetaTrader account.   
@@ -633,27 +635,29 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
 
     """
-    logger.info(update)
-    logger.info(update.effective_message.reply_to_message.message_id)
+    #logger.info(update.effective_message.reply_to_message.message_id)
 
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
-    try: 
+    signalInfos = PlaceTrade()
+    trade_id = ''
 
-        trade = {}
+    try: 
 
         # parses signal from Telegram message and determines the trade to close 
         if('TP1'.lower() in update.effective_message.text.lower()):
-            trade_id = 'Buy Limit'
-        
+            if update.effective_message.reply_to_message.message_id == signalInfos['messageid_tradeid'][0]:
+                signalInfos['messageid_tradeid'][1] = trade_id
+
+        if('TP2'.lower() in update.effective_message.text.lower()):
+            if update.effective_message.reply_to_message.message_id == signalInfos['messageid_tradeid'][0]:
+                signalInfos['messageid_tradeid'][2] = trade_id
+
         # checks if there was an issue with parsing the trade
-        if(not(trade)):
+        if(not(signalInfos)):
             raise Exception('Invalid Signal')
 
-        # sets the user context trade equal to the parsed trade
-        context.user_data['trade'] = trade
-        update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
     
     except Exception as error:
         logger.error(f'Error: {error}')
@@ -663,7 +667,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
-    # attempts connection to MetaTrader and places trade
+    # attempts connection to MetaTrader and take some profit
     asyncio.run(CloseTrade(update, trade_id))
     
     # removes trade from user context data
@@ -822,12 +826,12 @@ def main() -> None:
     # message handler for entering trade
     dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bBTC/USD\b"), PlaceTrade))
     # message handler for Take Profit
-    #dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bPRENEZ LE TP\b"), TakeProfitTrade))
+    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bPRENEZ LE TP\b"), TakeProfitTrade))
     # message handler for edit SL
     #dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bMETTRE LE SL\b"), PlaceTrade))
 
     # message handler for all messages that are not included in conversation handler
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, TakeProfitTrade))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, unknown_command))
  
     # log all errors
     dp.add_error_handler(error)
