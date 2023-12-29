@@ -564,8 +564,6 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     # adding tradeid values in signalInfos
     signalInfos['messageid_tradeid'].extend(tradeid)
 
-    update.effective_message.reply_text(signalInfos['messageid_tradeid'][0])
-
     # removes trade from user context data
     context.user_data['trade'] = None
 
@@ -640,9 +638,9 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
-    signalInfos = PlaceTrade()
+    signalInfos = PlaceTrade(update, context)
     update.effective_message.reply_text(signalInfos)
-    trade_id = ''
+    trade_id = 0
 
     try: 
 
