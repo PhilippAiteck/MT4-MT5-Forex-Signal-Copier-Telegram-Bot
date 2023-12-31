@@ -567,9 +567,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     # removes trade from user context data
     context.user_data['trade'] = None
 
-    #ConversationHandler.END
-
-    return signalInfos
+    return ConversationHandler.END
 
 def CalculateTrade(update: Update, context: CallbackContext) -> int:
     """Parses trade and places on MetaTrader account.   
