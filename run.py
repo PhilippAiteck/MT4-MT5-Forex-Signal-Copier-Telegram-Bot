@@ -680,6 +680,25 @@ async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     cles_serializables = list(signalInfos_converted.keys())
 
     try: 
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
+
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
+
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
+
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # parses signal from Telegram message and determines the trade to close 
         if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
