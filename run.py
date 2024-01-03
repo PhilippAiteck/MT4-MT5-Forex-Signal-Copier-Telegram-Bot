@@ -119,12 +119,12 @@ def ParseSignal(signal: str) -> dict:
         #trade['TP'] = [0, 0, 0]
 
         if(trade['OrderType'] == 'ACHAT'):
-            trade['StopLoss'] = float(trade['Entry'] - 450)
-            trade['TP'] = [trade['Entry'] + 200, trade['Entry'] + 600, trade['Entry'] + 2600]
+            trade['StopLoss'] = float(trade['Entry'] - 1000)
+            trade['TP'] = [trade['Entry'] + 800, trade['Entry'] + 1600, trade['Entry'] + 4000]
 
         if(trade['OrderType'] == 'VENTE'):
-            trade['StopLoss'] = float(trade['Entry'] + 450)
-            trade['TP'] = [trade['Entry'] - 200, trade['Entry'] - 600, trade['Entry'] - 2600]
+            trade['StopLoss'] = float(trade['Entry'] + 1000)
+            trade['TP'] = [trade['Entry'] - 800, trade['Entry'] - 1600, trade['Entry'] - 4000]
 
     else:
         trade['Entry'] = float((signal[1].split())[-1])
@@ -303,19 +303,43 @@ async def CloseTrade(update: Update, trade_id) -> None:
 
         update.effective_message.reply_text(f"Take Profit Successfully executed! 💰 {result}")
 
+        return result
+
     except Exception as error:
         logger.error(f'Error: {error}')
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
-    return result
 
+async def MoveToBreakEven(update: Update, trade_id):
+    """Break-even ongoing trades.
 
-async def MoveToBreakEven(connection, trade_id, break_even_price):
+    Arguments:
+        update: update from Telegram
+    """
+    api = MetaApi(API_KEY)
+ 
     try:
-        result = await connection.modify_position(trade_id, stop_loss=break_even_price)
-        return result
-    except Exception as e:
-        return str(e)
+        # Connectez-vous à l'API MetaApi
+        connection = await api.metatrader_account(ACCOUNT_ID)
+
+        # Récupérez la position
+        position = await connection.get_position(trade_id)
+
+        if position is not None:
+            # Récupérez le prix d'ouverture de la position
+            opening_price = position['openPrice']
+            
+            # Modifiez le stop-loss pour le définir à votre breakeven (le prix d'ouverture)
+            await connection.modify_position(trade_id, stop_loss=opening_price)
+
+            update.effective_message.reply_text(f"Breakeven the order {trade_id}.\n")
+        else:
+            update.effective_message.reply_text(f"Position {trade_id} didn't found.\n")
+
+   
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        update.effective_message.reply_text(f"Failed to break-even the trades. Error: {error}")
 
 
 async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
@@ -626,7 +650,7 @@ def unknown_command(update: Update, context: CallbackContext) -> None:
 
     return
 
-def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
+async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     """Starts process of parsing TP signal and closing trade on MetaTrader account.
 
     Arguments:
@@ -634,6 +658,12 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
 
     """
+    api = MetaApi(API_KEY)
+
+    # Connectez-vous à l'API MetaApi
+    connection = await api.metatrader_account(ACCOUNT_ID)
+
+
     #logger.info(update.effective_message.reply_to_message.message_id)
 
     # checks if the trade has already been parsed or not
@@ -641,7 +671,6 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
-    trade_id = 0
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -654,18 +683,34 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
         # parses signal from Telegram message and determines the trade to close 
         if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            trade_id = signalInfos_converted[messageid][0]
-            #update.effective_message.reply_text(trade_id)
+            # Fermez la première position de la liste
+            await connection.close_position(signalInfos_converted[messageid][0])
+            update.effective_message.reply_text(f"Position {signalInfos_converted[messageid][0]} fermée avec succes 💰.")
+
+            # Appliquez un breakeven pour les deux dernières positions de la liste
+            for trade_id in signalInfos_converted[messageid][1:]:
+                # Récupérez les informations de la position pour définir un breakeven
+                position = await connection.get_position(trade_id)
+                if position is not None:
+                    opening_price = position['openPrice']
+                    await connection.modify_position(trade_id, stop_loss=opening_price)
+                    print(f"Breakeven défini pour la position {trade_id}.")
+                else:
+                    print(f"La position {trade_id} n'a pas été trouvée.")
 
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            trade_id = signalInfos_converted[messageid][1]
-            #update.effective_message.reply_text(trade_id)
+            # Fermez la deuxième position de la liste
+            await connection.close_position(signalInfos_converted[messageid][1])
+            update.effective_message.reply_text(f"Position {signalInfos_converted[messageid][0]} fermée avec succes 💰.")
+
+        else:
+            print("Aucune position à fermer.")
+
 
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
-
-    
+        
     except Exception as error:
         logger.error(f'Error: {error}')
         errorMessage = f"There was an error parsing this signal 😕\n\nError: {error}\n\n"
@@ -675,8 +720,13 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     # attempts connection to MetaTrader and take some profit
-    resultclose = asyncio.run(CloseTrade(update, trade_id))
-    update.effective_message.reply_text(resultclose)
+    #resultclose = asyncio.run(CloseTrade(update, trade_id))
+    #update.effective_message.reply_text(resultclose)
+
+
+    # set the break-even on the other positions
+    #resultBE = asyncio.run(MoveToBreakEven(update, trade_id))
+    #update.effective_message.reply_text(resultBE)
 
     # removes trade from user context data
     context.user_data['trade'] = None
