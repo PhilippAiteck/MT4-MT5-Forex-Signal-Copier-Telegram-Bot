@@ -645,7 +645,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
-    update.effective_message.reply_text(signalInfos_converted)
+    #update.effective_message.reply_text(signalInfos_converted)
 
     # Sérialisation des clés "key"
     cles_serializables = list(signalInfos_converted.keys())
@@ -655,11 +655,11 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         # parses signal from Telegram message and determines the trade to close 
         if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][0]
-            update.effective_message.reply_text(trade_id)
+            #update.effective_message.reply_text(trade_id)
 
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][1]
-            update.effective_message.reply_text(trade_id)
+            #update.effective_message.reply_text(trade_id)
 
         # checks if there was an issue with parsing the trade
         if(not(signalInfos)):
@@ -675,8 +675,8 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     # attempts connection to MetaTrader and take some profit
-    #asyncio.run(CloseTrade(update, trade_id))
-    update.effective_message.reply_text(cles_serializables)
+    resultclose = asyncio.run(CloseTrade(update, trade_id))
+    update.effective_message.reply_text(resultclose)
 
     # removes trade from user context data
     context.user_data['trade'] = None
