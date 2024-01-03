@@ -299,7 +299,7 @@ async def CloseTrade(update: Update, trade_id) -> None:
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        result = await connection.close_order(trade_id)
+        result = await connection.close_position(trade_id)
 
         update.effective_message.reply_text(f"Take Profit Successfully executed! 💰 {result}")
 
@@ -805,7 +805,7 @@ def handle_message(update, context):
 
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
-        r"\bBTC/USDm\b": PlaceTrade, # message handler for entering trade
+        r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
         # r"\bMETTRE LE SL\b": EditTrade, # message handler for edit SL
         # Ajoutez d'autres regex et fonctions associées ici
