@@ -3,6 +3,8 @@ import asyncio
 import logging
 import math
 import os
+import re
+import json
 
 try:
     from typing import Literal
@@ -305,7 +307,7 @@ async def CloseTrade(update: Update, trade_id) -> None:
         logger.error(f'Error: {error}')
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
-    return
+    return result
 
 
 async def MoveToBreakEven(connection, trade_id, break_even_price):
@@ -526,13 +528,9 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         update: update from Telegram
         context: CallbackContext object that stores commonly used objects in handler callbacks
     """
-
-    signalInfos = {'messageid_tradeid': []}
-    tradeid = []
-
+    
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
-
     try: 
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
@@ -553,17 +551,22 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
+    signalInfos = read_data_from_json()
+    
     # extraction of the signal messageID's 
-    signalInfos = {'messageid_tradeid': [update.effective_message.message_id]}
-
-    #signalInfos['messageid_tradeid'] = update.effective_message.message_id
+    if update.effective_message.message_id not in signalInfos:
+        signalInfos[update.effective_message.message_id] = []
 
     # attempts connection to MetaTrader and places trade
     tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
 
     # adding tradeid values in signalInfos
-    signalInfos['messageid_tradeid'].extend(tradeid)
+    signalInfos[update.effective_message.message_id].extend(tradeid)
+    #signalInfos.update(signalInfos[update.effective_message.message_id].extend(tradeid))
+    #update.effective_message.reply_text(signalInfos)
 
+    write_data_to_json(signalInfos)
+    
     # removes trade from user context data
     context.user_data['trade'] = None
 
@@ -636,37 +639,45 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
-    signalInfos = PlaceTrade(update, context)
-    update.effective_message.reply_text(signalInfos)
+    messageid = update.effective_message.reply_to_message.message_id
+    signalInfos = read_data_from_json()
     trade_id = 0
+
+    # Convertir les valeurs de type chaîne en entiers
+    signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
+    update.effective_message.reply_text(signalInfos_converted)
+
+    # Sérialisation des clés "key"
+    cles_serializables = list(signalInfos_converted.keys())
 
     try: 
 
         # parses signal from Telegram message and determines the trade to close 
-        if('TP1'.lower() in update.effective_message.text.lower()):
-            if update.effective_message.reply_to_message.message_id == signalInfos['messageid_tradeid'][0]:
-                signalInfos['messageid_tradeid'][1] = trade_id
+        if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+            trade_id = signalInfos_converted[messageid][0]
+            update.effective_message.reply_text(trade_id)
 
-        if('TP2'.lower() in update.effective_message.text.lower()):
-            if update.effective_message.reply_to_message.message_id == signalInfos['messageid_tradeid'][0]:
-                signalInfos['messageid_tradeid'][2] = trade_id
+        elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+            trade_id = signalInfos_converted[messageid][1]
+            update.effective_message.reply_text(trade_id)
 
         # checks if there was an issue with parsing the trade
         if(not(signalInfos)):
-            raise Exception('Invalid Signal')
+            raise Exception('Invalid Close Signal')
 
     
     except Exception as error:
         logger.error(f'Error: {error}')
-        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL\nEntry \nSL \nTP \n\nOr use the /cancel to command to cancel this action."
+        errorMessage = f"There was an error parsing this signal 😕\n\nError: {error}\n\n"
         update.effective_message.reply_text(errorMessage)
 
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
     # attempts connection to MetaTrader and take some profit
-    asyncio.run(CloseTrade(update, trade_id))
-    
+    #asyncio.run(CloseTrade(update, trade_id))
+    update.effective_message.reply_text(cles_serializables)
+
     # removes trade from user context data
     context.user_data['trade'] = None
 
@@ -788,6 +799,36 @@ def GetOpenTradeIDs(update: Update, context: CallbackContext):
 
     return
 
+# Fonction pour gérer les messages
+def handle_message(update, context):
+    text_received = update.message.text
+
+    # Liste des expressions régulières et fonctions associées
+    regex_functions = {
+        r"\bBTC/USDm\b": PlaceTrade, # message handler for entering trade
+        r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
+        # r"\bMETTRE LE SL\b": EditTrade, # message handler for edit SL
+        # Ajoutez d'autres regex et fonctions associées ici
+    }
+
+    # Vérifiez chaque regex pour trouver une correspondance dans le message
+    for regex_pattern, func in regex_functions.items():
+        if re.search(regex_pattern, text_received):
+            func(update, context)
+            break  # Sort de la boucle après avoir déclenché la première fonction trouvée
+
+# Fonction pour lire les données du fichier JSON
+def read_data_from_json():
+    try:
+        with open('data.json', 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+# Fonction pour écrire les données dans le fichier JSON
+def write_data_to_json(data):
+    with open('data.json', 'w') as file:
+        json.dump(data, file)
 
 def main() -> None:
     """Runs the Telegram bot."""
@@ -820,15 +861,9 @@ def main() -> None:
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
-    # message handler for entering trade
-    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bBTC/USD\b\S*"), PlaceTrade))
-    # message handler for Take Profit
-    dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bPRENEZ LE TP\b\S*"), TakeProfitTrade))
-    # message handler for edit SL
-    #dp.add_handler(MessageHandler(Filters.text & (~Filters.command) & Filters.regex(r"\bMETTRE LE SL\b"), PlaceTrade))
-
     # message handler for all messages that are not included in conversation handler
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, unknown_command))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+
  
     # log all errors
     dp.add_error_handler(error)
