@@ -662,8 +662,8 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
             #update.effective_message.reply_text(trade_id)
 
         # checks if there was an issue with parsing the trade
-        if(not(signalInfos)):
-            raise Exception('Invalid Close Signal')
+        #if(not(signalInfos)):
+        #    raise Exception('Invalid Close Signal')
 
     
     except Exception as error:
