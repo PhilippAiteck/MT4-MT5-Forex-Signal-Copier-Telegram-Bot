@@ -805,7 +805,7 @@ def handle_message(update, context):
 
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
-        r"\bBTC/USDm\b": PlaceTrade, # message handler for entering trade
+        r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
         # r"\bMETTRE LE SL\b": EditTrade, # message handler for edit SL
         # Ajoutez d'autres regex et fonctions associées ici
