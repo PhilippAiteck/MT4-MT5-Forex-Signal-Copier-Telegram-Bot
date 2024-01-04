@@ -119,11 +119,11 @@ def ParseSignal(signal: str) -> dict:
         #trade['TP'] = [0, 0, 0]
 
         if(trade['OrderType'] == 'ACHAT'):
-            trade['StopLoss'] = float(trade['Entry'] - 1000)
+            trade['StopLoss'] = float(trade['Entry'] - 777)
             trade['TP'] = [trade['Entry'] + 800, trade['Entry'] + 1600, trade['Entry'] + 4000]
 
         if(trade['OrderType'] == 'VENTE'):
-            trade['StopLoss'] = float(trade['Entry'] + 1000)
+            trade['StopLoss'] = float(trade['Entry'] + 777)
             trade['TP'] = [trade['Entry'] - 800, trade['Entry'] - 1600, trade['Entry'] - 4000]
 
     else:
@@ -311,8 +311,8 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
                 position = await connection.get_position(position_id)
                 if position is not None:
                     opening_price = position['openPrice']
-                    take_profit = position['takeProfit']
-                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=take_profit)
+                    takeprofit = position['takeProfit']
+                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
                     update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
                 else:
                     update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
@@ -325,8 +325,8 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def MoveToBreakEven(update: Update, signalInfos_converted: dict):
-    """Break-even ongoing trades.
+async def EditSlTrade(update: Update, stoploss, signalInfos_converted):
+    """Edit SL ongoing trades.
 
     Arguments:
         update: update from Telegram
@@ -356,22 +356,20 @@ async def MoveToBreakEven(update: Update, signalInfos_converted: dict):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        if('TP1'.lower() in update.effective_message.text.lower()):
-            # Appliquez un breakeven pour les deux dernières positions de la liste
-            for position_id in signalInfos_converted[messageid][1:]:
-                # Récupérez la position
-                position = await connection.get_position(position_id)
-                if position is not None:
-                    opening_price = position['openPrice']
-                    take_profit = position['takeProfit']
-                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=take_profit)
-                    update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
-                else:
-                    update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
+        # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
+        for position_id in signalInfos_converted[messageid]:
+            # Récupérez la position
+            position = await connection.get_position(position_id)
+            if position is not None:
+                takeprofit = position['takeProfit']
+                await connection.modify_position(position_id, stop_loss=stoploss, take_profit=takeprofit)
+                update.effective_message.reply_text(f"SL défini pour la position {position_id}.")
+            else:
+                update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
    
     except Exception as error:
         logger.error(f'Error: {error}')
-        update.effective_message.reply_text(f"Failed to break-even the trades. Error: {error}")
+        update.effective_message.reply_text(f"Failed to set new SL on the trades. Error: {error}")
 
 
 async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
@@ -412,23 +410,11 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         # obtains account information from MetaTrader server
         account_information = await connection.get_account_information()
 
+        update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
+
         if account_information['broker'] == 'AXSE Brokerage Ltd.':
             trade['Symbol'] = trade['Symbol']+"_raw"
             logger.info(trade['Symbol'])
-
-
-        update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
-
-
-         # Ajout de la logique pour la fermeture du trade et le breakeven
-        if 'close_trade_id' in trade:
-            result_close = await CloseTrade(connection, trade['close_trade_id'])
-            update.effective_message.reply_text(f"Trade closed! Result: {result_close}")
-
-        if 'move_to_break_even' in trade:
-            break_even_price = trade['move_to_break_even']
-            result_be = await MoveToBreakEven(connection, trade['move_to_break_even']['trade_id'], break_even_price)
-            update.effective_message.reply_text(f"Moved to breakeven! Result: {result_be}")
 
 
         # checks if the order is a market execution to get the current price of symbol
@@ -865,7 +851,7 @@ def handle_message(update, context):
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
-        # r"\bMETTRE LE SL\b": EditTrade, # message handler for edit SL
+        #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
         # Ajoutez d'autres regex et fonctions associées ici
     }
 
