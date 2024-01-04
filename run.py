@@ -278,6 +278,7 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
     """
     api = MetaApi(API_KEY)
     messageid = update.effective_message.reply_to_message.message_id
+    update.effective_message.reply_text(signalInfos_converted)
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -712,9 +713,11 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][0]
             
-
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][1]
+
+        elif('Fermez le trade'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+            trade_id = signalInfos_converted[messageid][2]
 
 
         # Fermez la position de la liste
@@ -885,7 +888,8 @@ def handle_message(update, context):
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
-        r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
+        r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
+        r"\bFermez le trade maintenant\b": TakeProfitTrade, # message handler to Take Profit the last one
         # r"\bMETTRE LE SL\b": EditTrade, # message handler for edit SL
         # Ajoutez d'autres regex et fonctions associées ici
     }
