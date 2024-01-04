@@ -914,7 +914,7 @@ def write_data_to_json(data):
     with open('data.json', 'w') as file:
         json.dump(data, file)
 
-def main(update: Update,) -> None:
+def main(update: Update, context: CallbackContext) -> None:
     """Runs the Telegram bot."""
 
     updater = Updater(TOKEN, use_context=True)
