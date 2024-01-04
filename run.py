@@ -5,6 +5,7 @@ import math
 import os
 import re
 import json
+import time
 
 try:
     from typing import Literal
@@ -913,7 +914,7 @@ def write_data_to_json(data):
     with open('data.json', 'w') as file:
         json.dump(data, file)
 
-def main() -> None:
+def main(update) -> None:
     """Runs the Telegram bot."""
 
     updater = Updater(TOKEN, use_context=True)
@@ -955,9 +956,17 @@ def main() -> None:
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
 
-    #threading.Timer(5.0, update.effective_message.reply_text(update.effective_message.message_id)).start()
+    # Boucle d'envoi de messages toutes les 5 minutes
+    while True:
+        try:
+            # Envoyer un message au chat spécifié
+            update.effective_message.reply_text('Message périodique toutes les 5 minutes!')
 
-    return
+            # Attendre 5 minutes avant d'envoyer le prochain message
+            time.sleep(300)  # 300 secondes = 5 minutes
+        except Exception as e:
+            print(f"Une erreur s'est produite : {e}")
+        return
 
 
 if __name__ == '__main__':
