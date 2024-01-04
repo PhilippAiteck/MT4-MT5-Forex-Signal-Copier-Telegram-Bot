@@ -883,7 +883,7 @@ def handle_message(update, context):
     # Vérifiez chaque regex pour trouver une correspondance dans le message
     for regex_pattern, func in regex_functions.items():
         if re.search(regex_pattern, text_received):
-            func(update, context)
+            asyncio.run(func(update, context))
             break  # Sort de la boucle après avoir déclenché la première fonction trouvée
 
 # Fonction pour lire les données du fichier JSON
