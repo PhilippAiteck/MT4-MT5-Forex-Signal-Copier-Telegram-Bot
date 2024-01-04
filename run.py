@@ -270,13 +270,14 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def CloseTrade(update: Update, trade_id) -> None:
+async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
     """Close ongoing trades.
 
     Arguments:
         update: update from Telegram
     """
     api = MetaApi(API_KEY)
+    messageid = update.effective_message.reply_to_message.message_id
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -300,8 +301,21 @@ async def CloseTrade(update: Update, trade_id) -> None:
         await connection.wait_synchronized()
 
         result = await connection.close_position(trade_id)
+        update.effective_message.reply_text(f"Position {trade_id} fermée avec succes 'TP' 💰.")
 
-        update.effective_message.reply_text(f"Take Profit Successfully executed! 💰 {result}")
+        if('TP1'.lower() in update.effective_message.text.lower()):
+            # Appliquez un breakeven pour les deux dernières positions de la liste
+            for position_id in signalInfos_converted[messageid][1:]:
+                # Récupérez la position
+                position = await connection.get_position(position_id)
+                if position is not None:
+                    opening_price = position['openPrice']
+                    take_profit = position['takeProfit']
+                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=take_profit)
+                    update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
+                else:
+                    update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
+
 
         return result
 
@@ -310,7 +324,7 @@ async def CloseTrade(update: Update, trade_id) -> None:
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def MoveToBreakEven(update: Update, trade_id):
+async def MoveToBreakEven(update: Update, signalInfos_converted: dict):
     """Break-even ongoing trades.
 
     Arguments:
@@ -318,6 +332,7 @@ async def MoveToBreakEven(update: Update, trade_id):
     """
  
     api = MetaApi(API_KEY)
+    messageid = update.effective_message.reply_to_message.message_id
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -340,14 +355,18 @@ async def MoveToBreakEven(update: Update, trade_id):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        # Récupérez la position
-        position = await connection.get_position(trade_id)
-        if position is not None:
-            opening_price = position['openPrice']
-            await connection.modify_position(trade_id, stop_loss=opening_price)
-            update.effective_message.reply_text(f"Breakeven défini pour la position {trade_id}.")
-        else:
-            update.effective_message.reply_text(f"La position {trade_id} n'a pas été trouvée.")
+        if('TP1'.lower() in update.effective_message.text.lower()):
+            # Appliquez un breakeven pour les deux dernières positions de la liste
+            for position_id in signalInfos_converted[messageid][1:]:
+                # Récupérez la position
+                position = await connection.get_position(position_id)
+                if position is not None:
+                    opening_price = position['openPrice']
+                    take_profit = position['takeProfit']
+                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=take_profit)
+                    update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
+                else:
+                    update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
    
     except Exception as error:
         logger.error(f'Error: {error}')
@@ -693,18 +712,16 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][0]
             
-            # Appliquez un breakeven pour les deux dernières positions de la liste
-            for position_id in signalInfos_converted[messageid][1:]:
-                # Récupérez les informations de la position pour définir un breakeven
-                resultBE = asyncio.run(MoveToBreakEven(update, position_id))
 
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][1]
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(CloseTrade(update, trade_id))
-        update.effective_message.reply_text((f"Position {trade_id} fermée avec succes 💰."))
+        resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted))
+        
+        # Appliquez un breakeven pour les deux dernières positions de la liste
+        #resultBE = asyncio.run(MoveToBreakEven(update, signalInfos_converted))
 
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
