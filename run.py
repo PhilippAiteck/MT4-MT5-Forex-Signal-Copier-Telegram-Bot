@@ -714,7 +714,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][1]
 
-        elif('Fermez le trade'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+        elif('Fermez'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][2]
 
 
@@ -864,7 +864,7 @@ def handle_message(update, context):
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
-        r"\bFermez le trade maintenant\b": TakeProfitTrade, # message handler to Take Profit the last one
+        r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
         # r"\bMETTRE LE SL\b": EditTrade, # message handler for edit SL
         # Ajoutez d'autres regex et fonctions associées ici
     }
