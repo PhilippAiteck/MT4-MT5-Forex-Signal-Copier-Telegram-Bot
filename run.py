@@ -270,7 +270,7 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def CloseTrade(update: Update, trade_id) -> None:
+async def CloseTrade(update: Update, trade_id,) -> None:
     """Close ongoing trades.
 
     Arguments:
@@ -316,26 +316,38 @@ async def MoveToBreakEven(update: Update, trade_id):
     Arguments:
         update: update from Telegram
     """
-    api = MetaApi(API_KEY)
  
-    try:
-        # Connectez-vous à l'API MetaApi
-        connection = await api.metatrader_account(ACCOUNT_ID)
+    api = MetaApi(API_KEY)
 
+    try:
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
+
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
+
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
+
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
+        
         # Récupérez la position
         position = await connection.get_position(trade_id)
-
         if position is not None:
-            # Récupérez le prix d'ouverture de la position
             opening_price = position['openPrice']
-            
-            # Modifiez le stop-loss pour le définir à votre breakeven (le prix d'ouverture)
             await connection.modify_position(trade_id, stop_loss=opening_price)
-
-            update.effective_message.reply_text(f"Breakeven the order {trade_id}.\n")
+            update.effective_message.reply_text(f"Breakeven défini pour la position {trade_id}.")
         else:
-            update.effective_message.reply_text(f"Position {trade_id} didn't found.\n")
-
+            update.effective_message.reply_text(f"La position {trade_id} n'a pas été trouvée.")
    
     except Exception as error:
         logger.error(f'Error: {error}')
@@ -650,7 +662,7 @@ def unknown_command(update: Update, context: CallbackContext) -> None:
 
     return
 
-async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
+def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     """Starts process of parsing TP signal and closing trade on MetaTrader account.
 
     Arguments:
@@ -658,11 +670,6 @@ async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         context: CallbackContext object that stores commonly used objects in handler callbacks
 
     """
-    api = MetaApi(API_KEY)
-
-    # Connectez-vous à l'API MetaApi
-    connection = await api.metatrader_account(ACCOUNT_ID)
-
 
     #logger.info(update.effective_message.reply_to_message.message_id)
 
@@ -671,6 +678,7 @@ async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
+    trade_id = 0
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -680,56 +688,29 @@ async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     cles_serializables = list(signalInfos_converted.keys())
 
     try: 
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        initial_state = account.state
-        deployed_states = ['DEPLOYING', 'DEPLOYED']
-
-        if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
-            logger.info('Deploying account')
-            await account.deploy()
-
-        logger.info('Waiting for API server to connect to broker ...')
-        await account.wait_connected()
-
-        # connect to MetaApi API
-        connection = account.get_rpc_connection()
-        await connection.connect()
-
-        # wait until terminal state synchronized to the local state
-        logger.info('Waiting for SDK to synchronize to terminal state ...')
-        await connection.wait_synchronized()
 
         # parses signal from Telegram message and determines the trade to close 
         if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            # Fermez la première position de la liste
-            await connection.close_position(signalInfos_converted[messageid][0])
-            update.effective_message.reply_text(f"Position {signalInfos_converted[messageid][0]} fermée avec succes 💰.")
-
+            trade_id = signalInfos_converted[messageid][0]
+            
             # Appliquez un breakeven pour les deux dernières positions de la liste
-            for trade_id in signalInfos_converted[messageid][1:]:
+            for position_id in signalInfos_converted[messageid][1:]:
                 # Récupérez les informations de la position pour définir un breakeven
-                position = await connection.get_position(trade_id)
-                if position is not None:
-                    opening_price = position['openPrice']
-                    await connection.modify_position(trade_id, stop_loss=opening_price)
-                    print(f"Breakeven défini pour la position {trade_id}.")
-                else:
-                    print(f"La position {trade_id} n'a pas été trouvée.")
+                resultBE = asyncio.run(MoveToBreakEven(update, position_id))
 
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            # Fermez la deuxième position de la liste
-            await connection.close_position(signalInfos_converted[messageid][1])
-            update.effective_message.reply_text(f"Position {signalInfos_converted[messageid][0]} fermée avec succes 💰.")
+            trade_id = signalInfos_converted[messageid][1]
 
-        else:
-            print("Aucune position à fermer.")
 
+        # Fermez la position de la liste
+        resultclose = asyncio.run(CloseTrade(update, trade_id))
+        update.effective_message.reply_text((f"Position {trade_id} fermée avec succes 💰."))
 
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
-        
+
+    
     except Exception as error:
         logger.error(f'Error: {error}')
         errorMessage = f"There was an error parsing this signal 😕\n\nError: {error}\n\n"
@@ -742,6 +723,18 @@ async def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     #resultclose = asyncio.run(CloseTrade(update, trade_id))
     #update.effective_message.reply_text(resultclose)
 
+    #  # Fermez la première position de la liste
+    # if signalInfos_converted:
+    #     #await connection.close_position(trade_id)
+    #     resultclose = asyncio.run(CloseTrade(update, trade_id))
+    #     update.effective_message.reply_text((f"Position {trade_id} fermée avec succes 💰."))
+    # else:
+    #     update.effective_message.reply_text(("Aucune position à fermer."))
+
+    # # Appliquez un breakeven pour les deux dernières positions de la liste
+    # for position_id in signalInfos_converted[messageid][1:]:
+    #     # Récupérez les informations de la position pour définir un breakeven
+    #     resultBE = asyncio.run(MoveToBreakEven(update, position_id))
 
     # set the break-even on the other positions
     #resultBE = asyncio.run(MoveToBreakEven(update, trade_id))
@@ -883,7 +876,7 @@ def handle_message(update, context):
     # Vérifiez chaque regex pour trouver une correspondance dans le message
     for regex_pattern, func in regex_functions.items():
         if re.search(regex_pattern, text_received):
-            asyncio.run(func(update, context))
+            func(update, context)
             break  # Sort de la boucle après avoir déclenché la première fonction trouvée
 
 # Fonction pour lire les données du fichier JSON
