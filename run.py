@@ -278,7 +278,7 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
     """
     api = MetaApi(API_KEY)
     messageid = update.effective_message.reply_to_message.message_id
-    update.effective_message.reply_text(signalInfos_converted)
+    #update.effective_message.reply_text(signalInfos_converted)
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -691,8 +691,6 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     """
 
-    #logger.info(update.effective_message.reply_to_message.message_id)
-
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
@@ -723,9 +721,6 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         # Fermez la position de la liste
         resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted))
         
-        # Appliquez un breakeven pour les deux dernières positions de la liste
-        #resultBE = asyncio.run(MoveToBreakEven(update, signalInfos_converted))
-
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
@@ -739,26 +734,6 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
-    # attempts connection to MetaTrader and take some profit
-    #resultclose = asyncio.run(CloseTrade(update, trade_id))
-    #update.effective_message.reply_text(resultclose)
-
-    #  # Fermez la première position de la liste
-    # if signalInfos_converted:
-    #     #await connection.close_position(trade_id)
-    #     resultclose = asyncio.run(CloseTrade(update, trade_id))
-    #     update.effective_message.reply_text((f"Position {trade_id} fermée avec succes 💰."))
-    # else:
-    #     update.effective_message.reply_text(("Aucune position à fermer."))
-
-    # # Appliquez un breakeven pour les deux dernières positions de la liste
-    # for position_id in signalInfos_converted[messageid][1:]:
-    #     # Récupérez les informations de la position pour définir un breakeven
-    #     resultBE = asyncio.run(MoveToBreakEven(update, position_id))
-
-    # set the break-even on the other positions
-    #resultBE = asyncio.run(MoveToBreakEven(update, trade_id))
-    #update.effective_message.reply_text(resultBE)
 
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -913,18 +888,6 @@ def write_data_to_json(data):
     with open('data.json', 'w') as file:
         json.dump(data, file)
 
-# Fonction pour envoyer périodiquement le message
-def periodic_message(update, context):
-    chat_id = update.message.chat_id  # Remplacez par l'ID du chat où vous souhaitez envoyer le message
-    message_text = 'Message à envoyer toutes les 5 minutes'
-    context.bot.send_message(chat_id=chat_id, text=message_text)
-
-# Fonction pour envoyer un message
-def send_message(update, context):
-    chat_id = update.message.chat_id
-    message_text = 'Message à envoyer toutes les 5 minutes'
-    context.bot.send_message(chat_id=chat_id, text=message_text)
-
 
 def main() -> None:
     """Runs the Telegram bot."""
@@ -952,13 +915,9 @@ def main() -> None:
 
     # command to receive information about all ongoing trades.
     dp.add_handler(CommandHandler("ongoing_trades", GetOpenTradeIDs))
-    #dp.add_handler(CommandHandler("open_trades", GetOpenTradeIDs))
 
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
-
-    # Définir le handler de commande pour déclencher l'envoi de message
-    dp.add_handler(CommandHandler('sendmessage', send_message))
 
    # message handler for all messages that are not included in conversation handler
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
@@ -970,11 +929,6 @@ def main() -> None:
     # listens for incoming updates from Telegram
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
-
-    # Planification de l'envoi du message toutes les 5 minutes
-    updater.job_queue.run_repeating(periodic_message, interval=300, first=0)
-
-    #threading.Timer(5.0, update.effective_message.reply_text(update.effective_message.message_id)).start()
 
     return
 
