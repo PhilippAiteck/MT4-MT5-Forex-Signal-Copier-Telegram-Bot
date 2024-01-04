@@ -270,7 +270,7 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def CloseTrade(update: Update, trade_id,) -> None:
+async def CloseTrade(update: Update, trade_id) -> None:
     """Close ongoing trades.
 
     Arguments:
