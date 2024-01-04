@@ -5,7 +5,6 @@ import math
 import os
 import re
 import json
-import time
 
 try:
     from typing import Literal
@@ -914,7 +913,20 @@ def write_data_to_json(data):
     with open('data.json', 'w') as file:
         json.dump(data, file)
 
-def main(update: Update, context: CallbackContext) -> None:
+# Fonction pour envoyer périodiquement le message
+def periodic_message(update, context):
+    chat_id = update.message.chat_id  # Remplacez par l'ID du chat où vous souhaitez envoyer le message
+    message_text = 'Message à envoyer toutes les 5 minutes'
+    context.bot.send_message(chat_id=chat_id, text=message_text)
+
+# Fonction pour envoyer un message
+def send_message(update, context):
+    chat_id = update.message.chat_id
+    message_text = 'Message à envoyer toutes les 5 minutes'
+    context.bot.send_message(chat_id=chat_id, text=message_text)
+
+
+def main() -> None:
     """Runs the Telegram bot."""
 
     updater = Updater(TOKEN, use_context=True)
@@ -945,7 +957,10 @@ def main(update: Update, context: CallbackContext) -> None:
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
-    # message handler for all messages that are not included in conversation handler
+    # Définir le handler de commande pour déclencher l'envoi de message
+    dp.add_handler(CommandHandler('sendmessage', send_message))
+
+   # message handler for all messages that are not included in conversation handler
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
  
@@ -956,17 +971,12 @@ def main(update: Update, context: CallbackContext) -> None:
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
 
-    # Boucle d'envoi de messages toutes les 5 minutes
-    while True:
-        try:
-            # Envoyer un message au chat spécifié
-            update.effective_message.reply_text('Message périodique toutes les 5 minutes!')
+    # Planification de l'envoi du message toutes les 5 minutes
+    updater.job_queue.run_repeating(periodic_message, interval=300, first=0)
 
-            # Attendre 5 minutes avant d'envoyer le prochain message
-            time.sleep(300)  # 300 secondes = 5 minutes
-        except Exception as e:
-            print(f"Une erreur s'est produite : {e}")
-        return
+    #threading.Timer(5.0, update.effective_message.reply_text(update.effective_message.message_id)).start()
+
+    return
 
 
 if __name__ == '__main__':
