@@ -920,12 +920,13 @@ def main() -> None:
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
+    # Ajout du gestionnaire de message
+    dp.add_handler(CommandHandler("periodichandler", periodic_handler))
+
     # message handler for all messages that are not included in conversation handler
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
-    # Ajout du gestionnaire de message
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, periodic_handler))
- 
+
     # log all errors
     dp.add_error_handler(error)
     
