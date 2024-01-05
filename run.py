@@ -875,6 +875,21 @@ def write_data_to_json(data):
         json.dump(data, file)
 
 
+# Fonction pour envoyer un message
+async def send_periodic_message(update):
+    chat_id = update.effective_message.chat_id
+    message_text = 'Message à envoyer toutes les 5 minutes'
+    await update.effective_message.reply_text(message_text)
+
+# Handler pour déclencher l'envoi périodique de message
+async def periodic_handler(context):
+    while True:
+        # Envoi du message périodique
+        for update in context.bot.updates:
+            await send_periodic_message(update)
+        await asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
+
+
 def main() -> None:
     """Runs the Telegram bot."""
 
@@ -905,9 +920,11 @@ def main() -> None:
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
 
-   # message handler for all messages that are not included in conversation handler
+    # message handler for all messages that are not included in conversation handler
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
+    # Ajout du gestionnaire de message
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, periodic_handler))
  
     # log all errors
     dp.add_error_handler(error)
