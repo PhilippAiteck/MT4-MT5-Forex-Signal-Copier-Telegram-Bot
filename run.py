@@ -882,7 +882,7 @@ async def send_periodic_message(update):
     await update.effective_message.reply_text(message_text)
 
 # Handler pour déclencher l'envoi périodique de message
-async def periodic_handler(context):
+async def periodic_handler(update, context):
     while True:
         # Envoi du message périodique
         for update in context.bot.updates:
@@ -925,6 +925,8 @@ def main() -> None:
 
     # message handler for all messages that are not included in conversation handler
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, periodic_handler))
 
 
     # log all errors
