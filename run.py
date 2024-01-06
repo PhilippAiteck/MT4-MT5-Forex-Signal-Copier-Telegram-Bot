@@ -921,10 +921,10 @@ def main() -> None:
     dp.add_handler(conv_handler)
 
     # Ajout du gestionnaire de message
-    dp.add_handler(CommandHandler("periodichandler", periodic_handler))
+    #dp.add_handler(CommandHandler("periodichandler", periodic_handler))
 
     # message handler for all messages that are not included in conversation handler
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    #dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
 
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, periodic_handler))
 
