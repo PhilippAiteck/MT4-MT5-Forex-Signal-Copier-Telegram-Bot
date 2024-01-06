@@ -876,18 +876,18 @@ def write_data_to_json(data):
 
 
 # Fonction pour envoyer un message
-async def send_periodic_message(update):
+def send_periodic_message(update):
     chat_id = update.effective_message.chat_id
     message_text = 'Message à envoyer toutes les 5 minutes'
-    await update.effective_message.reply_text(message_text)
+    update.effective_message.reply_text(message_text)
 
 # Handler pour déclencher l'envoi périodique de message
-async def periodic_handler(update, context):
+def periodic_handler(update, context):
     while True:
         # Envoi du message périodique
         for update in context.bot.updates:
-            await send_periodic_message(update)
-        await asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
+            send_periodic_message(update)
+        asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
 
 
 def main() -> None:
