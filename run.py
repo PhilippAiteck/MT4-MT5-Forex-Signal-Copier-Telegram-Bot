@@ -101,6 +101,7 @@ def ParseSignal(signal: str) -> dict:
         
     if('/' in trade['Symbol']):
         trade['Symbol'] = trade['Symbol'].replace('/','')
+        trade['Symbol'] = trade['Symbol']+"m"
         #logger.info(trade['Symbol'])
     
     # checks if the symbol is valid, if not, returns an empty dictionary
