@@ -94,15 +94,7 @@ def ParseSignal(signal: str) -> dict:
         return {}
 
     # extracts symbol from trade signal
-    trade['Symbol'] = (signal[0].split())[-1]
-    if('(' in trade['Symbol'] or ')' in trade['Symbol']):
-        trade['Symbol'] = (signal[0].split())[-2]
-        #logger.info(trade['Symbol'])
-        
-    if('/' in trade['Symbol']):
-        trade['Symbol'] = trade['Symbol'].replace('/','')
-        #trade['Symbol'] = trade['Symbol']+"m"
-        #logger.info(trade['Symbol'])
+    trade['Symbol'] = (signal[0].split())[-1]        
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     #if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
@@ -114,7 +106,15 @@ def ParseSignal(signal: str) -> dict:
 
     # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        if('(' in trade['Symbol'] or ')' in trade['Symbol']):
+            trade['Symbol'] = (signal[0].split())[-2]
+            #logger.info(trade['Symbol'])
+            
+        trade['Symbol'] = trade['Symbol'].replace('/','')
+        #trade['Symbol'] = trade['Symbol']+"m"
+        #logger.info(trade['Symbol'])
         trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
+        logger.info(trade['Entry'])
         trade['Entry'] = float((trade['Entry'].split('-'))[0])
         #trade['StopLoss'] = 0
         #trade['TP'] = [0, 0, 0]
