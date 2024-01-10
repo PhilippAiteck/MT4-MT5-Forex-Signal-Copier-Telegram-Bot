@@ -843,6 +843,15 @@ def GetOpenTradeIDs(update: Update, context: CallbackContext):
 
     return
 
+def GetMessageTradeIDs(update: Update, context: CallbackContext):
+    """Retrieves information about all trades's ID with their message ID .
+
+    """
+    # Retrieves all trades's ID with their message ID from son file.
+    signalInfos = read_data_from_json()
+
+    update.effective_message.reply_text(signalInfos)
+
 # Fonction pour gérer les messages
 def handle_message(update, context):
     text_received = update.message.text
@@ -917,6 +926,9 @@ def main() -> None:
 
     # command to receive information about all ongoing trades.
     dp.add_handler(CommandHandler("ongoing_trades", GetOpenTradeIDs))
+
+    # command to receive information about all trades and their message ID.
+    dp.add_handler(CommandHandler("messagetrade_ids", GetMessageTradeIDs))
 
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
