@@ -92,9 +92,6 @@ def ParseSignal(signal: str) -> dict:
     # returns an empty dictionary if an invalid order type was given
     else:
         return {}
-
-    # extracts symbol from trade signal
-    trade['Symbol'] = (signal[0].split())[-1]        
     
     # checks if the symbol is valid, if not, returns an empty dictionary
     #if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
@@ -106,16 +103,14 @@ def ParseSignal(signal: str) -> dict:
 
     # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+        trade['Symbol'] = (signal[0].split())[-1]
         if('(' in trade['Symbol'] or ')' in trade['Symbol']):
             trade['Symbol'] = (signal[0].split())[-2]
-            #logger.info(trade['Symbol'])
-            
         trade['Symbol'] = trade['Symbol'].replace('/','')
         #trade['Symbol'] = trade['Symbol']+"m"
-        #logger.info(trade['Symbol'])
         trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
-        logger.info(trade['Entry'])
         trade['Entry'] = float((trade['Entry'].split('-'))[0])
+
         #trade['StopLoss'] = 0
         #trade['TP'] = [0, 0, 0]
 
@@ -128,20 +123,40 @@ def ParseSignal(signal: str) -> dict:
             trade['TP'] = [trade['Entry'] - 800, trade['Entry'] - 1600, trade['Entry'] - 4000]
 
     else:
-        trade['Entry'] = float((signal[1].split())[-1])
+        
+        if('🔼' in signal[0] or '🔽' in signal[0]):
+            trade['Symbol'] = (signal[0].split())[0][1:]
+            trade['Entry'] = float((signal[0].split())[-1])
+            trade['TP'] = [float((signal[2].split())[-1])]
+            # checks if there's a TP2 and parses it
+            if('TP'.lower() in signal[3].lower()):
+                trade['TP'].append(float(signal[3].split()[-1]))
+            trade['StopLoss'] = float((signal[5].split())[-1])
 
-        trade['StopLoss'] = float((signal[2].split())[-1])
-        trade['TP'] = [float((signal[3].split())[-1])]
+        elif('TP @'.lower() in signal[3].lower()):
+            if('limit'.lower() in trade['OrderType'].lower()):
+                trade['Symbol'] = (signal[0].split())[0]
+                trade['Entry'] = float((signal[0].split())[-1])
+            else:
+                trade['Symbol'] = (signal[0].split())[1]
+            trade['Symbol'].replace('#','')
+            trade['Entry'] = (signal[0].split())[-1]
+            trade['StopLoss'] = float((signal[2].split())[-1])
+            trade['TP'] = float((signal[3].split())[-1])
 
-        # checks if there's a fourth line and parses it for TP2
-        if(len(signal) > 4):
-            trade['TP'].append(float(signal[4].split()[-1]))
-            
-        # checks if there's a fith line and parses it for TP3
-        if(len(signal) > 5):
-            trade['TP'].append(float(signal[5].split()[-1]))
+        elif('Slowly-Layer'.lower() in signal[7].lower()):
+            trade['Symbol'] = (signal[0].split())[1]
+            trade['Entry'] = float((signal[0].split('-'))[1])
+            trade['StopLoss'] = float((signal[2].split())[-1])
+            trade['TP'] = [float((signal[4].split())[-1][1:])]
+            # checks if there's a TP2 and parses it
+            if('TP2'.lower() in signal[5].lower()):
+                trade['TP'].append(float((signal[5].split())[-1][1:]))
 
-    # adds risk factor to trade
+    if(trade['Symbol'].lower() == 'gold'): 
+        trade['Symbol'] = 'XAUUSD'
+ 
+     # adds risk factor to trade
     trade['RiskFactor'] = RISK_FACTOR
 
     return trade
@@ -305,18 +320,18 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         result = await connection.close_position(trade_id)
         update.effective_message.reply_text(f"Position {trade_id} fermée avec succes 'TP' 💰.")
 
-        if('TP1'.lower() in update.effective_message.text.lower()):
-            # Appliquez un breakeven pour les deux dernières positions de la liste
-            for position_id in signalInfos_converted[messageid][1:]:
-                # Récupérez la position
-                position = await connection.get_position(position_id)
-                if position is not None:
-                    opening_price = position['openPrice']
-                    takeprofit = position['takeProfit']
-                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
-                    update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
-                else:
-                    update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
+        #if('TP1'.lower() in update.effective_message.text.lower()):
+        # Appliquez un breakeven pour les deux dernières positions de la liste
+        for position_id in signalInfos_converted[messageid][1:]:
+            # Récupérez la position
+            position = await connection.get_position(position_id)
+            if position is not None:
+                opening_price = position['openPrice']
+                takeprofit = position['takeProfit']
+                await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
+            else:
+                update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
 
 
         return result
@@ -695,7 +710,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     try: 
 
         # parses signal from Telegram message and determines the trade to close 
-        if('TP1'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+        if('TP1'.lower() in update.effective_message.text.lower() or 'SECURE'.lower() in update.effective_message.text.lower() or 'CLOSE'.lower() in update.effective_message.text.lower() or 'move'.lower() in update.effective_message.text.lower()  and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][0]
             
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
@@ -855,21 +870,44 @@ def GetMessageTradeIDs(update: Update, context: CallbackContext):
 # Fonction pour gérer les messages
 def handle_message(update, context):
     text_received = update.message.text
+    #chat_title = update.message.forward_from_chat.title
 
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
-        #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
+
+        r"\b💵TP\b": PlaceTrade, # message handler for entering trade
+        r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
+
+        r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+        r"\bCLOSE our profit\b": TakeProfitTrade, # message handler to Take Profit
+
+        r"\bTP @\b": PlaceTrade, # message handler for entering trade
+        r"\bmove SL\b": TakeProfitTrade, # message handler to Take Profit
+            #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
         # Ajoutez d'autres regex et fonctions associées ici
     }
 
+    """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
+            # Liste des expressions régulières et fonctions associées
+            regex_functions = {
+                r"\bTP\b": PlaceTrade, # message handler for entering trade
+                r"\bSECURE PARTIALS MOVE\b": TakeProfitTrade, # message handler to Take Profit
+                #r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
+                #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
+                # Ajoutez d'autres regex et fonctions associées ici
+            }
+            
+        update.effective_message.reply_text(update.message.forward_from_chat.title)
+    """
     # Vérifiez chaque regex pour trouver une correspondance dans le message
     for regex_pattern, func in regex_functions.items():
         if re.search(regex_pattern, text_received):
             func(update, context)
             break  # Sort de la boucle après avoir déclenché la première fonction trouvée
+
 
 # Fonction pour lire les données du fichier JSON
 def read_data_from_json():
