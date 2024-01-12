@@ -436,8 +436,13 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
 
+        # Symbols editing
         if account_information['broker'] == 'AXSE Brokerage Ltd.':
             trade['Symbol'] = trade['Symbol']+"_raw"
+            logger.info(trade['Symbol'])
+
+        if 'trial' in account_information['broker']:
+            trade['Symbol'] = trade['Symbol']+"z"
             logger.info(trade['Symbol'])
 
 
@@ -886,7 +891,7 @@ def handle_message(update, context):
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
 
-        r"\bTP:\b": PlaceTrade, # message handler for entering trade
+        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
 
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
