@@ -322,8 +322,14 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
+        # Close the position
         result = await connection.close_position(trade_id)
-        update.effective_message.reply_text(f"Position {trade_id} fermée avec succes 'TP' 💰.")
+        
+        # Fetch profit of the position
+        position = await connection.get_position(trade_id)
+        profit = position['profit']
+
+        update.effective_message.reply_text(f"'TP' Position {trade_id} fermée avec succes {profit} 💰.")
 
         #if('TP1'.lower() in update.effective_message.text.lower()):
         # Appliquez un breakeven pour les deux dernières positions de la liste
@@ -883,7 +889,7 @@ def handle_message(update, context):
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
 
-        r"\b💵TP\b": PlaceTrade, # message handler for entering trade
+        r"\bTP:\b": PlaceTrade, # message handler for entering trade
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
 
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
