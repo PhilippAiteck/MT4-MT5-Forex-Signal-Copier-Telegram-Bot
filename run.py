@@ -323,8 +323,8 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         result = await connection.close_position(trade_id)
         
         # Fetch profit of the position
-        order = await connection.get_history_order(trade_id)
-        profit = order['profit']
+        position = await connection.get_history_orders_by_position(position_id=trade_id)
+        profit = position['profit']
 
         update.effective_message.reply_text(f"'TP' Position {trade_id} fermée avec succes {profit} 💰.")
 
