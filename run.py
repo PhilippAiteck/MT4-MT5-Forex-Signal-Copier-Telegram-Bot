@@ -126,12 +126,17 @@ def ParseSignal(signal: str) -> dict:
         
         if('🔼' in signal[0] or '🔽' in signal[0]):
             trade['Symbol'] = (signal[0].split())[0][1:]
+            logger.info(trade['Symbol'])
             trade['Entry'] = float((signal[0].split())[-1])
+            logger.info(trade['Entry'])
             trade['TP'] = [float((signal[2].split())[-1])]
             # checks if there's a TP2 and parses it
             if('TP'.lower() in signal[3].lower()):
                 trade['TP'].append(float(signal[3].split()[-1]))
-            trade['StopLoss'] = float((signal[5].split())[-1])
+                trade['StopLoss'] = float((signal[5].split())[-1])
+            else:
+                trade['StopLoss'] = float((signal[4].split())[-1])
+            logger.info(trade['StopLoss'])
 
         elif('TP @'.lower() in signal[3].lower()):
             if('limit'.lower() in trade['OrderType'].lower()):
