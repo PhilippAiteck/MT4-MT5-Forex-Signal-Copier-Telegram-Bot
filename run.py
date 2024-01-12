@@ -324,9 +324,10 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         
         # Fetch profit of the position
         position = await connection.get_history_orders_by_position(position_id=trade_id)
-        profit = position['profit']
+        #profit = position['profit']
 
-        update.effective_message.reply_text(f"'TP' Position {trade_id} fermée avec succes {profit} 💰.")
+        #update.effective_message.reply_text(f"'TP' Position {trade_id} fermée avec succes {profit} 💰.")
+        update.effective_message.reply_text(position)
 
         #if('TP1'.lower() in update.effective_message.text.lower()):
         # Appliquez un breakeven pour les deux dernières positions de la liste
