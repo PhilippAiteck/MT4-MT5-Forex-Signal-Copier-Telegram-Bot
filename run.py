@@ -329,18 +329,18 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         update.effective_message.reply_text(f"'TP' Position {trade_id} fermée avec succes 💰.")
         #logger.info(position)
 
-        #if('TP1'.lower() in update.effective_message.text.lower()):
-        # Appliquez un breakeven pour les deux dernières positions de la liste
-        for position_id in signalInfos_converted[messageid][1:]:
-            # Récupérez la position
-            position = await connection.get_position(position_id)
-            if position is not None:
-                opening_price = position['openPrice']
-                takeprofit = position['takeProfit']
-                await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
-                update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
-            else:
-                update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
+        if('TP1'.lower() in update.effective_message.text.lower()):
+            # Appliquez un breakeven pour les deux dernières positions de la liste
+            for position_id in signalInfos_converted[messageid][1:]:
+                # Récupérez la position
+                position = await connection.get_position(position_id)
+                if position is not None:
+                    opening_price = position['openPrice']
+                    takeprofit = position['takeProfit']
+                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                    update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
+                else:
+                    update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
 
 
         return result
