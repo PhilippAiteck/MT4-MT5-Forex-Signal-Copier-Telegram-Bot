@@ -172,7 +172,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     """
 
     # calculates the stop loss in pips
-    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'GOLD' or trade['Symbol'] == 'XAUUSD_raw'):
+    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUUSDz' or trade['Symbol'] == 'XAUUSD_raw'):
         multiplier = 0.1
 
     elif(trade['Symbol'] == 'XAGUSD'):
@@ -440,7 +440,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             trade['Symbol'] = trade['Symbol']+"_raw"
             logger.info(trade['Symbol'])
 
-        if 'trial' in account_information['broker'].lower():
+        if account_information['server'] == 'Exness-MT5Trial10':
             trade['Symbol'] = trade['Symbol']+"z"
             logger.info(trade['Symbol'])
 
