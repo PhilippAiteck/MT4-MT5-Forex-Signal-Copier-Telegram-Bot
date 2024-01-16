@@ -116,15 +116,15 @@ def ParseSignal(signal: str) -> dict:
 
         if(trade['OrderType'] == 'ACHAT'):
             trade['StopLoss'] = float(trade['Entry'] - 777)
-            trade['TP'] = [trade['Entry'] + 800, trade['Entry'] + 1600, trade['Entry'] + 4000]
+            trade['TP'] = [trade['Entry'] + 500, trade['Entry'] + 1400, trade['Entry'] + 3200]
 
         if(trade['OrderType'] == 'VENTE'):
             trade['StopLoss'] = float(trade['Entry'] + 777)
-            trade['TP'] = [trade['Entry'] - 800, trade['Entry'] - 1600, trade['Entry'] - 4000]
+            trade['TP'] = [trade['Entry'] - 500, trade['Entry'] - 1400, trade['Entry'] - 3200]
 
     else:
         
-        if('🔼' in signal[0] or '🔽' in signal[0]):
+        if('🔽' in signal[0] or '🔼' in signal[0]):
             trade['Symbol'] = (signal[0].split())[0][1:]
             trade['Entry'] = float((signal[0].split())[-1])
             trade['TP'] = [float((signal[2].split())[-1])]
@@ -151,9 +151,7 @@ def ParseSignal(signal: str) -> dict:
             trade['Entry'] = float((signal[0].split('-'))[1])
             trade['StopLoss'] = float((signal[2].split())[-1])
             trade['TP'] = [float((signal[4].split())[-1][1:])]
-            # checks if there's a TP2 and parses it
-            if('TP2'.lower() in signal[5].lower()):
-                trade['TP'].append(float((signal[5].split())[-1][1:]))
+            trade['TP'].append(float((signal[5].split())[-1][1:]))
 
     if(trade['Symbol'].lower() == 'gold'): 
         trade['Symbol'] = 'XAUUSD'
@@ -889,19 +887,11 @@ def handle_message(update, context):
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
+        r"\bTP\b": PlaceTrade, # message handler for entering trade
+        r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
-
-        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
-        r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
-
-        r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
-        r"\bCLOSE our profit\b": TakeProfitTrade, # message handler to Take Profit
-
-        r"\bTP @\b": PlaceTrade, # message handler for entering trade
-        r"\bmove SL\b": TakeProfitTrade, # message handler to Take Profit
-            #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
-        # Ajoutez d'autres regex et fonctions associées ici
     }
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
