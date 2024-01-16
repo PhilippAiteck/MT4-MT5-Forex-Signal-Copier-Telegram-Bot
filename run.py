@@ -65,28 +65,28 @@ def ParseSignal(signal: str) -> dict:
     trade = {}
 
     # determines the order type of the trade
-    if('Buy Limit'.lower() in signal[0].lower()):
+    if('buy limit' in signal[0].lower()):
         trade['OrderType'] = 'Buy Limit'
 
-    elif('Sell Limit'.lower() in signal[0].lower()):
+    elif('sell limit' in signal[0].lower()):
         trade['OrderType'] = 'Sell Limit'
 
-    elif('Buy Stop'.lower() in signal[0].lower()):
+    elif('buy stop' in signal[0].lower()):
         trade['OrderType'] = 'Buy Stop'
 
-    elif('Sell Stop'.lower() in signal[0].lower()):
+    elif('sell stop' in signal[0].lower()):
         trade['OrderType'] = 'Sell Stop'
 
-    elif('Buy'.lower() in signal[0].lower()):
+    elif('buy' in signal[0].lower()):
         trade['OrderType'] = 'Buy'
 
-    elif('ACHAT'.lower() in signal[0].lower()):
+    elif('achat' in signal[0].lower()):
         trade['OrderType'] = 'ACHAT'
     
-    elif('Sell'.lower() in signal[0].lower()):
+    elif('sell' in signal[0].lower()):
         trade['OrderType'] = 'Sell'
 
-    elif('VENTE'.lower() in signal[0].lower()):
+    elif('vente' in signal[0].lower()):
         trade['OrderType'] = 'VENTE'
     
     # returns an empty dictionary if an invalid order type was given
@@ -129,13 +129,13 @@ def ParseSignal(signal: str) -> dict:
             trade['Entry'] = float((signal[0].split())[-1])
             trade['TP'] = [float((signal[2].split())[-1])]
             # checks if there's a TP2 and parses it
-            if('TP'.lower() in signal[3].lower()):
+            if('tp' in signal[3].lower()):
                 trade['TP'].append(float(signal[3].split()[-1]))
                 trade['StopLoss'] = float((signal[5].split())[-1])
             else:
                 trade['StopLoss'] = float((signal[4].split())[-1])
 
-        elif('TP @'.lower() in signal[3].lower()):
+        elif('tp @' in signal[3].lower()):
             if('limit'.lower() in trade['OrderType'].lower()):
                 trade['Symbol'] = (signal[0].split())[0]
                 trade['Entry'] = float((signal[0].split())[-1])
@@ -146,7 +146,7 @@ def ParseSignal(signal: str) -> dict:
             trade['StopLoss'] = float((signal[2].split())[-1])
             trade['TP'] = float((signal[3].split())[-1])
 
-        elif('Slowly-Layer'.lower() in signal[7].lower()):
+        elif('slowly-layer' in signal[7].lower()):
             trade['Symbol'] = (signal[0].split())[1]
             trade['Entry'] = float((signal[0].split('-'))[1])
             trade['StopLoss'] = float((signal[2].split())[-1])
@@ -440,7 +440,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             trade['Symbol'] = trade['Symbol']+"_raw"
             logger.info(trade['Symbol'])
 
-        if 'trial' in account_information['broker']:
+        if 'trial' in account_information['broker'].lower():
             trade['Symbol'] = trade['Symbol']+"z"
             logger.info(trade['Symbol'])
 
