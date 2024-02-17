@@ -196,6 +196,8 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
         
     # calculates the stop loss in pips
     stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
+    
+    #logger.info(stopLossPips)
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         if currency == 'XOF':
@@ -228,15 +230,16 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     for takeProfit in trade['TP']:
         takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
-
-    #logger.info(stopLossPips)
     #logger.info(takeProfitPips)
 
-    # creates table with trade information
-    table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
-    
-    # sends user trade information and calcualted risk
-    update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
+    if(trade['OrderType'] != 'ACHAT' or trade['OrderType'] != 'VENTE'):
+
+        # creates table with trade information
+        table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
+        
+        # sends user trade information and calcualted risk
+        update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
+        
 
     return
 
