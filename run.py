@@ -119,12 +119,12 @@ def ParseSignal(signal: str) -> dict:
         #trade['TP'] = [0, 0, 0]
 
         if(trade['OrderType'] == 'ACHAT'):
-            trade['StopLoss'] = float(trade['Entry'] - 777)
-            trade['TP'] = [trade['Entry'] + 500, trade['Entry'] + 1400, trade['Entry'] + 3200]
+            trade['StopLoss'] = float(trade['Entry'] - 600)
+            trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
 
         if(trade['OrderType'] == 'VENTE'):
-            trade['StopLoss'] = float(trade['Entry'] + 777)
-            trade['TP'] = [trade['Entry'] - 500, trade['Entry'] - 1400, trade['Entry'] - 3200]
+            trade['StopLoss'] = float(trade['Entry'] + 600)
+            trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
 
     else:
         
