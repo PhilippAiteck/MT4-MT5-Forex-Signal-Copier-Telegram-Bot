@@ -41,8 +41,12 @@ logger = logging.getLogger(__name__)
 CALCULATE, TRADE, DECISION = range(3)
 
 # allowed FX symbols
-SYMBOLS = ['EURUSD.i', 'USDJPY.i', 'GBPUSD.i', 'USDCHF.i', 'AUDUSD.i', 'USDCAD.i', 'NZDUSD.i', 'EURGBP.i', 'EURJPY.i', 'GBPJPY.i', 'AUDJPY.i', 'NZDJPY.i', 'EURAUD.i', 'GBPAUD.i', 'EURNZD.i', 'GBPNZD.i', 'EURCAD.i', 'GBPCAD.i', 'AUDCAD.i', 'NZDCAD.i', 'EURCHF.i', 'GBPCHF.i', 'AUDCHF.i', 'NZDCHF.i', 'USDSEK.i', 'USDDKK.i', 'USDNOK.i', 'USDTRY.i', 'USDMXN.i', 'USDZAR.i', 'EURSEK.i', 'EURDKK.i', 'EURNOK.i', 'EURTRY.i', 'EURMXN.i', 'EURZAR.i', 'GBPSEK.i', 'GBPDKK.i', 'GBPNOK.i', 'GBPTRY.i', 'GBPMXN.i', 'GBPZAR.i', 'AUDSEK.i', 'AUDDKK.i', 'AUDNOK.i', 'AUDTRY.i', 'AUDMXN.i',  'AUDNZD.i','AUDZAR.i', 'CADJPY.i', 'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'XAUEUR', 'XAUGBP', 'XAGEUR', 'XAGGBP', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD', 'XPTUSD.', 'GOLD']
-SPECIALSYMBOLS = ['US500Cash', 'US30Cash', 'US100Cash', 'GER40Cash', 'UK100Cash', 'AUS200Cash', 'FRA40Cash', 'JP225Cash', 'SPX500.b', 'US30.b', 'NDX100.b', 'GER30.b', 'UK100.b', 'AUS200.b', 'FRA40.b', 'JPN225.b', 'SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'US100', 'GER30', 'UK100', 'AUS200', 'FRA40', 'JP225', 'HK50', 'IN50', 'CN50', 'SG30', 'BTCUSD_raw', 'ETHUSD_raw', 'XRPUSD_raw', 'LTCUSD_raw', 'BTCUSD.b', 'ETHUSD.b', 'XRPUSD.b', 'LTCUSD.b', 'BCHUSD.b', 'ADAUSD.b', 'XLMUSD.b', 'EOSUSD.b', 'XMRUSD.b', 'DASHUSD.b', 'ZECUSD.b', 'BNBUSD.b', 'XTZUSD.b', 'ATOMUSD.b', 'ONTUSD.b', 'NEOUSD.b', 'VETUSD.b', 'ICXUSD.b', 'QTUMUSD.b', 'ZRXUSD.b', 'DOGEUSD.b', 'LINKUSD.b', 'HTUSD.b', 'ETCUSD.b', 'OMGUSD.b', 'NANOUSD.b', 'LSKUSD.b', 'WAVESUSD.b', 'REPUSD.b', 'MKRUSD.b', 'GNTUSD.b', 'LOOMUSD.b', 'MANAUSD.b', 'KNCUSD.b', 'CVCUSD.b', 'BATUSD.b', 'NEXOUSD.b', 'DCRUSD.b', 'PAXUSD.b', 'TUSDUSD.b', 'USDCUSD.b', 'USDTUSD.b', 'BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD', 'BTCUSDm']
+ENERGIES = ['USOIL', 'UKOIL', 'USOUSD', 'UKOUSD', 'XNGUSD', 'CL-OIL']
+METAUX = ['XAUUSD', 'XAUEUR', 'XAUGBP', 'XAGUSD', 'XAGEUR', 'XAGGBP', 'XPTUSD', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'GOLD']
+INDICES = ['SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'NDX100', 'US100', 'DE30', 'GER30', 'UK100', 'AUS200', 'FR40', 'FRA40', 'JP225', 'JPN225', 'HK50', 'IN50', 'CN50', 'SG30', 'STOXX50']
+CRYPTO = ['BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD']
+FOREX = ['EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDBRL',  'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD']
+
 
 # RISK FACTOR
 RISK_FACTOR = float(os.environ.get("RISK_FACTOR"))
@@ -172,13 +176,13 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     """
 
     # calculates the stop loss in pips
-    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUUSDz' or trade['Symbol'] == 'XAUUSD_raw'):
+    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
         multiplier = 0.1
 
-    elif(trade['Symbol'] == 'XAGUSD'):
+    elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
         multiplier = 0.001
 
-    elif(trade['Symbol'] in SPECIALSYMBOLS):
+    elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
         multiplier = 1
 
     elif(str(trade['Entry']).index('.') >= 2):
@@ -442,6 +446,13 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
 
         if account_information['server'] == 'Exness-MT5Trial10':
             trade['Symbol'] = trade['Symbol']+"z"
+            logger.info(trade['Symbol'])
+
+        if account_information['broker'] == 'EightCap Global Ltd':
+            if(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
+                trade['Symbol'] = trade['Symbol']+".b"
+            elif(trade['Symbol'] in FOREX):
+                trade['Symbol'] = trade['Symbol']+".i"
             logger.info(trade['Symbol'])
 
 
