@@ -232,8 +232,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
 
     #logger.info(takeProfitPips)
 
-    if(trade['OrderType'] != 'ACHAT' or trade['OrderType'] != 'VENTE'):
-
+    if(trade['OrderType'] != 'ACHAT' & trade['OrderType'] != 'VENTE'):
         # creates table with trade information
         table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
         
