@@ -176,7 +176,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     """
 
     # calculates the stop loss in pips
-    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
+    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP' or trade['Symbol'] in CRYPTO):
         multiplier = 0.1
 
     elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
