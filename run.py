@@ -182,8 +182,8 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
         multiplier = 0.001
 
-    elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
-        multiplier = 1
+    #elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
+        #multiplier = 1
 
     elif(str(trade['Entry']).index('.') >= 2):
         multiplier = 0.01
