@@ -43,7 +43,7 @@ CALCULATE, TRADE, DECISION = range(3)
 # allowed FX symbols
 ENERGIES = ['USOIL', 'UKOIL', 'USOUSD', 'UKOUSD', 'XNGUSD', 'CL-OIL']
 METAUX = ['XAUUSD', 'XAUEUR', 'XAUGBP', 'XAGUSD', 'XAGEUR', 'XAGGBP', 'XPTUSD', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'GOLD']
-INDICES = ['SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'NDX100', 'US100', 'DE30', 'GER30', 'UK100', 'AUS200', 'FR40', 'FRA40', 'JP225', 'JPN225', 'HK50', 'IN50', 'CN50', 'SG30', 'STOXX50']
+INDICES = ['SPX500', 'US500', 'US30', 'DJ30', 'USTEC', 'USTECH', 'NAS100', 'NDX100', 'US100', 'DE30', 'GER30', 'UK100', 'AUS200', 'FR40', 'FRA40', 'JP225', 'JPN225', 'HK50', 'IN50', 'CN50', 'SG30', 'STOXX50']
 CRYPTO = ['BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD']
 FOREX = ['EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDBRL',  'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD', 'CHFJPY']
 
@@ -165,7 +165,7 @@ def ParseSignal(signal: str) -> dict:
 
     return trade
 
-def GetTradeInformation(update: Update, trade: dict, balance: float, currency: str) -> None:
+def GetTradeInformation(update: Update, trade: dict, balance: float, currency: str, multiplier: float) -> None:
     """Calculates information from given trade including stop loss and take profit in pips, posiition size, and potential loss/profit.
 
     Arguments:
@@ -174,22 +174,6 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
         balance: current balance of the MetaTrader account
         currency: currency of the MetaTrader account
     """
-
-    # calculates the stop loss in pips
-    if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
-        multiplier = 0.1
-
-    elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
-        multiplier = 0.001
-
-    elif(str(trade['Entry']).index('.') >= 1):
-        multiplier = 1
-
-    elif(str(trade['Entry']).index('.') >= 2):
-        multiplier = 0.01
-
-    else:
-        multiplier = 0.0001
 
     # pips calculation
     takeProfitPips = []
@@ -436,10 +420,12 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
+
         # obtains account information from MetaTrader server
         account_information = await connection.get_account_information()
 
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
+
 
         # Symbols editing
         if account_information['broker'] == 'AXSE Brokerage Ltd.':
@@ -462,7 +448,6 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             balance = account_information['balance']
 
 
-
         # checks if the order is a market execution to get the current price of symbol
         #if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
         price = await connection.get_symbol_price(symbol=trade['Symbol'])
@@ -475,8 +460,27 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
             trade['Entry'] = float(price['ask'])
 
+
+        # calculates the stop loss in pips
+        if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
+            multiplier = 0.1
+
+        elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
+            multiplier = 0.001
+
+        elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
+            multiplier = 1
+
+        elif(str(trade['Entry']).index('.') >= 2):
+            multiplier = 0.01
+
+        else:
+            multiplier = 0.0001
+
+
         # produces a table with trade information
-        GetTradeInformation(update, trade, balance, account_information['currency'])
+        GetTradeInformation(update, trade, balance, account_information['currency'], multiplier)
+
 
         # checks if the user has indicated to enter trade
         if(enterTrade == True):
