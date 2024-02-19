@@ -427,6 +427,23 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         update.effective_message.reply_text("Successfully connected to MetaTrader!\nCalculating trade risk ... 🤔")
 
 
+        # calculates the stop loss in pips
+        if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
+            multiplier = 0.1
+
+        elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
+            multiplier = 0.001
+
+        elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
+            multiplier = 1
+
+        elif(str(trade['Entry']).index('.') >= 2):
+            multiplier = 0.01
+
+        else:
+            multiplier = 0.0001
+
+
         # Symbols editing
         if account_information['broker'] == 'AXSE Brokerage Ltd.':
             trade['Symbol'] = trade['Symbol']+"_raw"
@@ -439,7 +456,7 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         if account_information['broker'] == 'EightCap Global Ltd':
             # Calculer la vrai balance du challenge
             balance = (account_information['balance'] * 5) / 100
-            if(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
+            if(multiplier == 1):
                 trade['Symbol'] = trade['Symbol']+".b"
             elif(trade['Symbol'] in FOREX):
                 trade['Symbol'] = trade['Symbol']+".i"
@@ -459,23 +476,6 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         # uses ask price if the order type is a sell
         if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
             trade['Entry'] = float(price['ask'])
-
-
-        # calculates the stop loss in pips
-        if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
-            multiplier = 0.1
-
-        elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
-            multiplier = 0.001
-
-        elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
-            multiplier = 1
-
-        elif(str(trade['Entry']).index('.') >= 2):
-            multiplier = 0.01
-
-        else:
-            multiplier = 0.0001
 
 
         # produces a table with trade information
