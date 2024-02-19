@@ -45,7 +45,7 @@ ENERGIES = ['USOIL', 'UKOIL', 'USOUSD', 'UKOUSD', 'XNGUSD', 'CL-OIL']
 METAUX = ['XAUUSD', 'XAUEUR', 'XAUGBP', 'XAGUSD', 'XAGEUR', 'XAGGBP', 'XPTUSD', 'XPTEUR', 'XPTGBP', 'XPDEUR', 'XPDGBP', 'GOLD']
 INDICES = ['SPX500', 'US500', 'US30', 'USTEC', 'USTECH', 'NAS100', 'NDX100', 'US100', 'DE30', 'GER30', 'UK100', 'AUS200', 'FR40', 'FRA40', 'JP225', 'JPN225', 'HK50', 'IN50', 'CN50', 'SG30', 'STOXX50']
 CRYPTO = ['BTCUSD', 'ETHUSD', 'XRPUSD', 'LTCUSD', 'BCHUSD', 'ADAUSD', 'XLMUSD', 'EOSUSD', 'XMRUSD', 'DASHUSD', 'ZECUSD', 'BNBUSD', 'XTZUSD', 'ATOMUSD', 'ONTUSD', 'NEOUSD', 'VETUSD', 'ICXUSD', 'QTUMUSD', 'ZRXUSD', 'DOGEUSD', 'LINKUSD', 'HTUSD', 'ETCUSD', 'OMGUSD', 'NANOUSD', 'LSKUSD', 'WAVESUSD', 'REPUSD', 'MKRUSD', 'GNTUSD', 'LOOMUSD', 'MANAUSD', 'KNCUSD', 'CVCUSD', 'BATUSD', 'NEXOUSD', 'DCRUSD', 'PAXUSD', 'TUSDUSD', 'USDCUSD', 'USDTUSD']
-FOREX = ['EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDBRL',  'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD']
+FOREX = ['EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'AUDJPY', 'NZDJPY', 'EURAUD', 'GBPAUD', 'EURNZD', 'GBPNZD', 'EURCAD', 'GBPCAD', 'AUDCAD', 'NZDCAD', 'EURCHF', 'GBPCHF', 'AUDCHF', 'NZDCHF', 'USDBRL',  'USDSEK', 'USDDKK', 'USDNOK', 'USDTRY', 'USDMXN', 'USDZAR', 'EURSEK', 'EURDKK', 'EURNOK', 'EURTRY', 'EURMXN', 'EURZAR', 'GBPSEK', 'GBPDKK', 'GBPNOK', 'GBPTRY', 'GBPMXN', 'GBPZAR', 'AUDSEK', 'AUDDKK', 'AUDNOK', 'AUDTRY', 'AUDMXN', 'AUDZAR', 'CADJPY', 'AUDNZD', 'CHFJPY']
 
 
 # RISK FACTOR
@@ -213,13 +213,13 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
         else:
 
             if(balance <= 499):
-                trade['PositionSize'] = 0.03
+                trade['PositionSize'] = 0.09
 
             elif(balance > 499 and balance < 1000):
-                trade['PositionSize'] = 0.06
+                trade['PositionSize'] = 0.18
 
             else:
-                trade['PositionSize'] = 0.09
+                trade['PositionSize'] = 0.27
 
     else:
 
@@ -444,18 +444,23 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
         # Symbols editing
         if account_information['broker'] == 'AXSE Brokerage Ltd.':
             trade['Symbol'] = trade['Symbol']+"_raw"
-            logger.info(trade['Symbol'])
+            #logger.info(trade['Symbol'])
 
         if account_information['server'] == 'Exness-MT5Trial10':
             trade['Symbol'] = trade['Symbol']+"z"
-            logger.info(trade['Symbol'])
+            #logger.info(trade['Symbol'])
 
         if account_information['broker'] == 'EightCap Global Ltd':
+            # Calculer la vrai balance du challenge
+            balance = (account_information['balance'] * 5) / 100
             if(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
                 trade['Symbol'] = trade['Symbol']+".b"
             elif(trade['Symbol'] in FOREX):
                 trade['Symbol'] = trade['Symbol']+".i"
-            logger.info(trade['Symbol'])
+            #logger.info(trade['Symbol'])
+        else:
+            balance = account_information['balance']
+
 
 
         # checks if the order is a market execution to get the current price of symbol
@@ -471,8 +476,8 @@ async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
             trade['Entry'] = float(price['ask'])
 
         # produces a table with trade information
-        GetTradeInformation(update, trade, account_information['balance'], account_information['currency'])
-            
+        GetTradeInformation(update, trade, balance, account_information['currency'])
+
         # checks if the user has indicated to enter trade
         if(enterTrade == True):
 
