@@ -119,11 +119,11 @@ def ParseSignal(signal: str) -> dict:
         #trade['TP'] = [0, 0, 0]
 
         if(trade['OrderType'] == 'ACHAT'):
-            trade['StopLoss'] = float(trade['Entry'] - 600)
+            trade['StopLoss'] = float(trade['Entry'] - 900)
             trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
 
         if(trade['OrderType'] == 'VENTE'):
-            trade['StopLoss'] = float(trade['Entry'] + 600)
+            trade['StopLoss'] = float(trade['Entry'] + 900)
             trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
 
     else:
@@ -131,31 +131,34 @@ def ParseSignal(signal: str) -> dict:
         if('🔽' in signal[0] or '🔼' in signal[0]):
             trade['Symbol'] = (signal[0].split())[0][1:]
             trade['Entry'] = float((signal[0].split())[-1])
-            trade['TP'] = [float((signal[2].split())[-1])]
+            trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
             # checks if there's a TP2 and parses it
             if('tp' in signal[3].lower()):
-                trade['TP'].append(float(signal[3].split()[-1]))
-                trade['StopLoss'] = float((signal[5].split())[-1])
+                trade['TP'].append(float(signal[3].replace(' ','').split(':')[-1]))
+                trade['StopLoss'] = float((signal[5].replace(' ','').split(':'))[-1])
             else:
-                trade['StopLoss'] = float((signal[4].split())[-1])
+                trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
 
         elif('tp @' in signal[3].lower()):
             if('limit'.lower() in trade['OrderType'].lower()):
-                trade['Symbol'] = (signal[0].split())[0]
-                trade['Entry'] = float((signal[0].split())[-1])
+                if('for'.lower() in signal[0]):
+                    trade['Symbol'] = (signal[0].split())[3]
+                else:
+                    trade['Symbol'] = (signal[0].split())[0]
+                    #trade['Entry'] = float((signal[0].split())[-1])
             else:
                 trade['Symbol'] = (signal[0].split())[1]
             trade['Symbol'].replace('#','')
             trade['Entry'] = (signal[0].split())[-1]
-            trade['StopLoss'] = float((signal[2].split())[-1])
-            trade['TP'] = float((signal[3].split())[-1])
+            trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
+            trade['TP'] = float((signal[3].replace(' ','').split('@'))[-1])
 
         elif('slowly-layer' in signal[7].lower()):
             trade['Symbol'] = (signal[0].split())[1]
             trade['Entry'] = float((signal[0].split('-'))[1])
-            trade['StopLoss'] = float((signal[2].split())[-1])
-            trade['TP'] = [float((signal[4].split())[-1][1:])]
-            trade['TP'].append(float((signal[5].split())[-1][1:]))
+            trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
+            trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
+            trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
 
     if(trade['Symbol'].lower() == 'gold'): 
         trade['Symbol'] = 'XAUUSD'
@@ -338,13 +341,13 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def EditSlTrade(update: Update, stoploss, signalInfos_converted):
+async def EditTrade(update: Update, stoploss, signalInfos_converted):
     """Edit SL ongoing trades.
 
     Arguments:
         update: update from Telegram
     """
- 
+
     api = MetaApi(API_KEY)
     messageid = update.effective_message.reply_to_message.message_id
 
@@ -776,6 +779,74 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     return ConversationHandler.END
 
+def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
+    """Starts process of parsing TP signal and closing trade on MetaTrader account.
+
+    Arguments:
+        update: update from Telegram
+        context: CallbackContext object that stores commonly used objects in handler callbacks
+
+    """
+
+    # converts message to list of strings for parsing
+    signal = signal.splitlines()
+    signal = [line.rstrip() for line in signal]
+
+    sltrade = {}
+
+    # determines the order type of the trade's SL to edit
+    sltrade['stoploss'] = float((signal[0].split())[4] + (signal[0].split())[5])
+    sltrade['ordertype'] = (signal[0].split())[-3]
+
+    # checks if the trade has already been parsed or not
+    #if(context.user_data['trade'] == None):
+
+    messageid = update.effective_message.reply_to_message.message_id
+    signalInfos = read_data_from_json()
+    trade_id = 0
+
+    # Convertir les valeurs de type chaîne en entiers
+    signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
+    #update.effective_message.reply_text(signalInfos_converted)
+
+    # Sérialisation des clés "key"
+    cles_serializables = list(signalInfos_converted.keys())
+
+    try: 
+
+        # parses signal from Telegram message and determines the trade to edit 
+        if('METTRE LE SL'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+            trade_id = signalInfos_converted[messageid][0]
+            
+        elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+            trade_id = signalInfos_converted[messageid][1]
+
+        elif('Fermez'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+            trade_id = signalInfos_converted[messageid][2]
+
+
+        # Modifiez la position de la liste
+        resultedit = asyncio.run(EditTrade(update, sltrade['stoploss'], signalInfos_converted))
+        
+        # checks if there was an issue with parsing the trade
+        #if(not(signalInfos)):
+        #    raise Exception('Invalid Close Signal')
+
+    
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        errorMessage = f"There was an error parsing this signal 😕\n\nError: {error}\n\n"
+        update.effective_message.reply_text(errorMessage)
+
+        # returns to TRADE state to reattempt trade parsing
+        return TRADE
+    
+
+    # removes trade from user context data
+    context.user_data['trade'] = None
+
+    return ConversationHandler.END
+
 
 # Command Handlers
 def welcome(update: Update, context: CallbackContext) -> None:
@@ -915,6 +986,8 @@ def handle_message(update, context):
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
+
+        #r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
     }
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
