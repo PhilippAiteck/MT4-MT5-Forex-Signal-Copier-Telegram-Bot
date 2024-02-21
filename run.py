@@ -127,8 +127,13 @@ def ParseSignal(signal: str) -> dict:
             trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
 
     else:
-        
-        if('🔽' in signal[0] or '🔼' in signal[0]):
+
+        if('METTRE LE SL'.lower() in signal[0].lower()):
+            # determines the order type of the trade's SL to edit
+            trade['stoploss'] = float((signal[0].split())[4] + (signal[0].split())[5])
+            #trade['ordertype'] = (signal[0].split())[-3]
+
+        elif('🔽' in signal[0] or '🔼' in signal[0]):
             trade['Symbol'] = (signal[0].split())[0][1:]
             trade['Entry'] = float((signal[0].split())[-1])
             trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
@@ -139,7 +144,7 @@ def ParseSignal(signal: str) -> dict:
             else:
                 trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
 
-        elif('tp @' in signal[3].lower()):
+        elif('Tp @'.lower() in signal[3].lower()):
             if('limit'.lower() in trade['OrderType'].lower()):
                 if('for'.lower() in signal[0]):
                     trade['Symbol'] = (signal[0].split())[3]
@@ -156,7 +161,7 @@ def ParseSignal(signal: str) -> dict:
             if('tp2' in signal[4].lower()):
                 trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
 
-        elif('slowly-layer' in signal[7].lower()):
+        elif('slowly-layer'.lower() in signal[7].lower()):
             trade['Symbol'] = (signal[0].split())[1]
             trade['Entry'] = float((signal[0].split('-'))[1])
             trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
@@ -791,22 +796,12 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
 
     """
 
-    # converts message to list of strings for parsing
-    signal = signal.splitlines()
-    signal = [line.rstrip() for line in signal]
-
-    sltrade = {}
-
-    # determines the order type of the trade's SL to edit
-    sltrade['stoploss'] = float((signal[0].split())[4] + (signal[0].split())[5])
-    sltrade['ordertype'] = (signal[0].split())[-3]
-
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
     messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
-    trade_id = 0
+    #trade_id = 0
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -825,10 +820,18 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         else:
             trade_id = signalInfos_converted[messageid][1]
         """
-
-        # Modifiez la position de la liste
-        resultedit = asyncio.run(EditTrade(update, sltrade['stoploss'], signalInfos_converted))
         
+        # parses signal from Telegram message
+        trade = ParseSignal(update.effective_message.text)
+        
+        # checks if there was an issue with parsing the trade
+        if(not(trade)):
+            raise Exception('Invalid Trade')
+
+        # sets the user context trade equal to the parsed trade and extract messageID 
+        context.user_data['trade'] = trade
+        update.effective_message.reply_text("StopLoss Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+       
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
@@ -842,7 +845,9 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
-
+    # Modifiez le stoploss des positions de la liste
+    resultedit = asyncio.run(EditTrade(update, trade['stoploss'], signalInfos_converted))
+ 
     # removes trade from user context data
     context.user_data['trade'] = None
 
