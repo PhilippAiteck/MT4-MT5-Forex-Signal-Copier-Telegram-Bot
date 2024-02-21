@@ -68,111 +68,113 @@ def ParseSignal(signal: str) -> dict:
 
     trade = {}
 
-    # determines the order type of the trade
-    if('buy limit' in signal[0].lower()):
-        trade['OrderType'] = 'Buy Limit'
 
-    elif('sell limit' in signal[0].lower()):
-        trade['OrderType'] = 'Sell Limit'
-
-    elif('buy stop' in signal[0].lower()):
-        trade['OrderType'] = 'Buy Stop'
-
-    elif('sell stop' in signal[0].lower()):
-        trade['OrderType'] = 'Sell Stop'
-
-    elif('buy' in signal[0].lower()):
-        trade['OrderType'] = 'Buy'
-
-    elif('achat' in signal[0].lower()):
-        trade['OrderType'] = 'ACHAT'
-    
-    elif('sell' in signal[0].lower()):
-        trade['OrderType'] = 'Sell'
-
-    elif('vente' in signal[0].lower()):
-        trade['OrderType'] = 'VENTE'
-    
-    # returns an empty dictionary if an invalid order type was given
-    else:
-        return {}
-    
-    # checks if the symbol is valid, if not, returns an empty dictionary
-    #if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
-    #    return {}
-    
-    # checks wheter or not to convert entry to float because of market exectution option ("NOW")
-    #if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
-    #    trade['Entry'] = (signal[1].split())[-1]
-
-    # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
-    if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
-        trade['Symbol'] = (signal[0].split())[-1]
-        if('(' in trade['Symbol'] or ')' in trade['Symbol']):
-            trade['Symbol'] = (signal[0].split())[-2]
-        trade['Symbol'] = trade['Symbol'].replace('/','')
-        #trade['Symbol'] = trade['Symbol']+"m"
-        trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
-        trade['Entry'] = float((trade['Entry'].split('-'))[0])
-
-        #trade['StopLoss'] = 0
-        #trade['TP'] = [0, 0, 0]
-
-        if(trade['OrderType'] == 'ACHAT'):
-            trade['StopLoss'] = float(trade['Entry'] - 900)
-            trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
-
-        if(trade['OrderType'] == 'VENTE'):
-            trade['StopLoss'] = float(trade['Entry'] + 900)
-            trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
+    if('METTRE LE SL'.lower() in signal[0].lower()):
+        # extract the StopLoss
+        trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
+        #trade['ordertype'] = (signal[0].split())[-3]
 
     else:
+        # determines the order type of the trade
+        if('buy limit' in signal[0].lower()):
+            trade['OrderType'] = 'Buy Limit'
 
-        if('METTRE LE SL'.lower() in signal[0].lower()):
-            # determines the order type of the trade's SL to edit
-            trade['stoploss'] = float((signal[0].split())[4] + (signal[0].split())[5])
-            #trade['ordertype'] = (signal[0].split())[-3]
+        elif('sell limit' in signal[0].lower()):
+            trade['OrderType'] = 'Sell Limit'
 
-        elif('🔽' in signal[0] or '🔼' in signal[0]):
-            trade['Symbol'] = (signal[0].split())[0][1:]
-            trade['Entry'] = float((signal[0].split())[-1])
-            trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
-            # checks if there's a TP2 and parses it
-            if('tp' in signal[3].lower()):
-                trade['TP'].append(float(signal[3].replace(' ','').split(':')[-1]))
-                trade['StopLoss'] = float((signal[5].replace(' ','').split(':'))[-1])
-            else:
-                trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
+        elif('buy stop' in signal[0].lower()):
+            trade['OrderType'] = 'Buy Stop'
 
-        elif('Tp @'.lower() in signal[3].lower()):
-            if('limit'.lower() in trade['OrderType'].lower()):
-                if('for'.lower() in signal[0]):
-                    trade['Symbol'] = (signal[0].split())[3]
+        elif('sell stop' in signal[0].lower()):
+            trade['OrderType'] = 'Sell Stop'
+
+        elif('buy' in signal[0].lower()):
+            trade['OrderType'] = 'Buy'
+
+        elif('achat' in signal[0].lower()):
+            trade['OrderType'] = 'ACHAT'
+        
+        elif('sell' in signal[0].lower()):
+            trade['OrderType'] = 'Sell'
+
+        elif('vente' in signal[0].lower()):
+            trade['OrderType'] = 'VENTE'
+        
+        # returns an empty dictionary if an invalid order type was given
+        else:
+            return {}
+        
+        # checks if the symbol is valid, if not, returns an empty dictionary
+        #if((trade['Symbol'] not in SYMBOLS) and (trade['Symbol'] not in SPECIALSYMBOLS)):
+        #    return {}
+        
+        # checks wheter or not to convert entry to float because of market exectution option ("NOW")
+        #if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'Sell'):
+        #    trade['Entry'] = (signal[1].split())[-1]
+
+        # checks if it's market exectution option ACHAT or VENTE to extract null: PE, SL and TP
+        if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
+            trade['Symbol'] = (signal[0].split())[-1]
+            if('(' in trade['Symbol'] or ')' in trade['Symbol']):
+                trade['Symbol'] = (signal[0].split())[-2]
+            trade['Symbol'] = trade['Symbol'].replace('/','')
+            #trade['Symbol'] = trade['Symbol']+"m"
+            trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
+            trade['Entry'] = float((trade['Entry'].split('-'))[0])
+
+            #trade['StopLoss'] = 0
+            #trade['TP'] = [0, 0, 0]
+
+            if(trade['OrderType'] == 'ACHAT'):
+                trade['StopLoss'] = float(trade['Entry'] - 900)
+                trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
+
+            if(trade['OrderType'] == 'VENTE'):
+                trade['StopLoss'] = float(trade['Entry'] + 900)
+                trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
+
+        else:
+
+            if('🔽' in signal[0] or '🔼' in signal[0]):
+                trade['Symbol'] = (signal[0].split())[0][1:]
+                trade['Entry'] = float((signal[0].split())[-1])
+                trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
+                # checks if there's a TP2 and parses it
+                if('tp' in signal[3].lower()):
+                    trade['TP'].append(float(signal[3].replace(' ','').split(':')[-1]))
+                    trade['StopLoss'] = float((signal[5].replace(' ','').split(':'))[-1])
                 else:
-                    trade['Symbol'] = (signal[0].split())[0]
-                    #trade['Entry'] = float((signal[0].split())[-1])
-            else:
+                    trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
+
+            elif('Tp @'.lower() in signal[3].lower()):
+                if('limit'.lower() in trade['OrderType'].lower()):
+                    if('for'.lower() in signal[0]):
+                        trade['Symbol'] = (signal[0].split())[3]
+                    else:
+                        trade['Symbol'] = (signal[0].split())[0]
+                        #trade['Entry'] = float((signal[0].split())[-1])
+                else:
+                    trade['Symbol'] = (signal[0].split())[1]
+                if('#'.lower() in trade['Symbol'].lower()):
+                    trade['Symbol'].replace('#','')
+                trade['Entry'] = (signal[0].split())[-1]
+                trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
+                trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
+                if('tp2' in signal[4].lower()):
+                    trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
+
+            elif('slowly-layer'.lower() in signal[7].lower()):
                 trade['Symbol'] = (signal[0].split())[1]
-            if('#'.lower() in trade['Symbol'].lower()):
-                trade['Symbol'].replace('#','')
-            trade['Entry'] = (signal[0].split())[-1]
-            trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
-            trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
-            if('tp2' in signal[4].lower()):
-                trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
+                trade['Entry'] = float((signal[0].split('-'))[1])
+                trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
+                trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
+                trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
 
-        elif('slowly-layer'.lower() in signal[7].lower()):
-            trade['Symbol'] = (signal[0].split())[1]
-            trade['Entry'] = float((signal[0].split('-'))[1])
-            trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
-            trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
-            trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
-
-    if(trade['Symbol'].lower() == 'gold'): 
-        trade['Symbol'] = 'XAUUSD'
- 
-     # adds risk factor to trade
-    trade['RiskFactor'] = RISK_FACTOR
+        if(trade['Symbol'].lower() == 'gold'): 
+            trade['Symbol'] = 'XAUUSD'
+    
+        # adds risk factor to trade
+        trade['RiskFactor'] = RISK_FACTOR
 
     return trade
 
@@ -805,7 +807,6 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
-    update.effective_message.reply_text(signalInfos_converted)
 
     # Sérialisation des clés "key"
     cles_serializables = list(signalInfos_converted.keys())
