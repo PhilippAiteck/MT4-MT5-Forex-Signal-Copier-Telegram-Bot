@@ -148,10 +148,13 @@ def ParseSignal(signal: str) -> dict:
                     #trade['Entry'] = float((signal[0].split())[-1])
             else:
                 trade['Symbol'] = (signal[0].split())[1]
-            trade['Symbol'].replace('#','')
+            if('#'.lower() in trade['Symbol'].lower()):
+                trade['Symbol'].replace('#','')
             trade['Entry'] = (signal[0].split())[-1]
             trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
-            trade['TP'] = float((signal[3].replace(' ','').split('@'))[-1])
+            trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
+            if('tp2' in signal[4].lower()):
+                trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
 
         elif('slowly-layer' in signal[7].lower()):
             trade['Symbol'] = (signal[0].split())[1]
@@ -807,23 +810,21 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
-    #update.effective_message.reply_text(signalInfos_converted)
+    update.effective_message.reply_text(signalInfos_converted)
 
     # Sérialisation des clés "key"
     cles_serializables = list(signalInfos_converted.keys())
 
     try: 
 
+        """""
         # parses signal from Telegram message and determines the trade to edit 
-        if('METTRE LE SL'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+        if messageid is None:
             trade_id = signalInfos_converted[messageid][0]
             
-        elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
+        else:
             trade_id = signalInfos_converted[messageid][1]
-
-        elif('Fermez'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            trade_id = signalInfos_converted[messageid][2]
-
+        """
 
         # Modifiez la position de la liste
         resultedit = asyncio.run(EditTrade(update, sltrade['stoploss'], signalInfos_converted))
@@ -987,7 +988,7 @@ def handle_message(update, context):
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
 
-        #r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
+        r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
     }
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
