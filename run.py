@@ -73,6 +73,10 @@ def ParseSignal(signal: str) -> dict:
         # extract the StopLoss
         trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
         #trade['ordertype'] = (signal[0].split())[-3]
+    elif('BE'.lower() in signal[0].lower()):
+        # extract the StopLoss
+        trade['symbol'] = (signal[0].split())[-1]
+        #trade['ordertype'] = (signal[0].split())[-3]
 
     else:
         # determines the order type of the trade
@@ -351,7 +355,7 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def EditTrade(update: Update, stoploss, signalInfos_converted):
+async def EditTrade(update: Update, trade: dict, signalInfos_converted):
     """Edit SL ongoing trades.
 
     Arguments:
@@ -382,17 +386,35 @@ async def EditTrade(update: Update, stoploss, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
-        for position_id in signalInfos_converted[messageid]:
-            # Récupérez la position
-            position = await connection.get_position(position_id)
-            if position is not None:
-                takeprofit = position['takeProfit']
-                await connection.modify_position(position_id, stop_loss=stoploss, take_profit=takeprofit)
-                update.effective_message.reply_text(f"SL défini pour la position {position_id}.")
-            else:
-                update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
-   
+        if messageid is not None:
+            # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
+            for position_id in signalInfos_converted[messageid]:
+                # Récupérez la position
+                position = await connection.get_position(position_id)
+                if position is not None:
+                    opening_price = position['openPrice']
+                    takeprofit = position['takeProfit']
+                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                    if('BE'.lower() in update.effective_message.text.lower()):
+                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
+                    else:
+                        # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                        await connection.modify_position(position_id, stop_loss=trade['stoploss'], take_profit=takeprofit)
+                        update.effective_message.reply_text(f"SL défini pour la position {position_id}.")
+
+                else:
+                    update.effective_message.reply_text(f"La position n'a pas été trouvée.")
+
+        else:
+            positions = await connection.get_positions()
+            for position in positions:
+                if position['symbol'] == trade['symbol']:
+                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                    update.effective_message.reply_text(f"BreakEven défini pour les positions de {trade['symbol']}.")
+        
+
     except Exception as error:
         logger.error(f'Error: {error}')
         update.effective_message.reply_text(f"Failed to set new SL on the trades. Error: {error}")
@@ -831,7 +853,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
 
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
-        update.effective_message.reply_text("StopLoss Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+        update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
        
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -847,7 +869,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     # Modifiez le stoploss des positions de la liste
-    resultedit = asyncio.run(EditTrade(update, trade['stoploss'], signalInfos_converted))
+    resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -995,6 +1017,7 @@ def handle_message(update, context):
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
 
         r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
+        r"\bBE\b": EditStopLossTrade, # message handler for edit SL
     }
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
