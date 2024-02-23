@@ -363,7 +363,6 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
     """
 
     api = MetaApi(API_KEY)
-    messageid = update.effective_message.reply_to_message.message_id
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -386,7 +385,8 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        if messageid is not None:
+        if update.effective_message.reply_to_message.message_id is not None:
+            messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
                 # Récupérez la position
