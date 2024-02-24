@@ -73,7 +73,7 @@ def ParseSignal(signal: str) -> dict:
         # extract the StopLoss
         trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('BE'.lower() in signal[0].lower()):
+    elif('BE' in signal[0]):
         # extract the StopLoss
         trade['symbol'] = (signal[0].split())[-1]
         #trade['ordertype'] = (signal[0].split())[-3]
@@ -662,7 +662,8 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     try: 
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
-        
+        logger.info(trade)
+
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid Trade')
