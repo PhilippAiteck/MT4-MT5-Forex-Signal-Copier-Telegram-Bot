@@ -833,13 +833,14 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
 
     # Sérialisation des clés "key"
-    #cles_serializables = list(signalInfos_converted.keys())
+    cles_serializables = list(signalInfos_converted.keys())
 
     try: 
        
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
-        
+        logger.info(trade)
+
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid Trade')
