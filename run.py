@@ -385,7 +385,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        if update.effective_message.reply_to_message is not None:
+        if update.effective_message.reply_to_message.message_id is not None:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
@@ -823,7 +823,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
-    messageid = update.effective_message.reply_to_message.message_id
+    #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
     #trade_id = 0
 
