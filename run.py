@@ -385,7 +385,15 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        if update.effective_message.reply_to_message.message_id is not None:
+        if update.effective_message.reply_to_message.message_id is None:
+            positions = await connection.get_positions()
+            for position in positions:
+                if position['symbol'] == trade['symbol']:
+                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                    update.effective_message.reply_text(f"BreakEven défini pour les positions de {trade['symbol']}.")
+
+        else:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
@@ -405,14 +413,6 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
 
                 else:
                     update.effective_message.reply_text(f"La position n'a pas été trouvée.")
-
-        else:
-            positions = await connection.get_positions()
-            for position in positions:
-                if position['symbol'] == trade['symbol']:
-                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                    update.effective_message.reply_text(f"BreakEven défini pour les positions de {trade['symbol']}.")
         
 
     except Exception as error:
