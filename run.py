@@ -386,17 +386,19 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        logger.info(update.effective_message)
-        logger.info(update.effective_message.reply_to_message)
+        #logger.info(update.effective_message)
+        #logger.info(update.effective_message.reply_to_message)
         #logger.info(update.effective_message.reply_to_message.message_id)
 
         if update.effective_message.reply_to_message is None:
             positions = await connection.get_positions()
             for position in positions:
-                if position['symbol'] == trade['symbol']:
+                if position.symbol == trade['symbol']:
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                    update.effective_message.reply_text(f"BreakEven défini pour les positions de {trade['symbol']}.")
+                    await connection.modify_position(position.id, stop_loss=position.openPrice, take_profit=position.takeProfit)
+                    update.effective_message.reply_text(f"BreakEven défini pour {trade['symbol']}.")
+                else:
+                    update.effective_message.reply_text(f"Aucune position n'est ouverte pour le Symbol {trade['symbol']}")
         else:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
