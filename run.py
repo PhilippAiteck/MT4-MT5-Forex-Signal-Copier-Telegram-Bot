@@ -73,7 +73,7 @@ def ParseSignal(signal: str) -> dict:
         # extract the StopLoss
         trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('BE' in signal[0]):
+    elif('BE'.lower() in signal[0].lower()):
         # extract the StopLoss
         trade['symbol'] = (signal[0].split())[-1]
         #trade['ordertype'] = (signal[0].split())[-3]
@@ -846,8 +846,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
-        logger.info(trade)
-
+        
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid Trade')
@@ -871,8 +870,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     
     # Modifiez le stoploss des positions de la liste
     resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
-    logger.info(resultedit)
-
+ 
     # removes trade from user context data
     context.user_data['trade'] = None
 
