@@ -363,7 +363,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
     """
 
     api = MetaApi(API_KEY)
-    messageid = update.effective_message.reply_to_message.message_id
+    #messageid = update.effective_message.reply_to_message.message_id
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -386,7 +386,8 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
         
-        if messageid is not None:
+        if update.effective_message.reply_to_message.message_id is not None:
+            messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
                 # Récupérez la position
@@ -823,15 +824,14 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
-    messageid = update.effective_message.reply_to_message.message_id
+    #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
-    #trade_id = 0
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
 
     # Sérialisation des clés "key"
-    cles_serializables = list(signalInfos_converted.keys())
+    #cles_serializables = list(signalInfos_converted.keys())
 
     try: 
 
