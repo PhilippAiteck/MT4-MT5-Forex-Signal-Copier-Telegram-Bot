@@ -361,7 +361,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
     Arguments:
         update: update from Telegram
     """
-
+    messageid = update.effective_message.reply_to_message.message_id
     api = MetaApi(API_KEY)
 
     try:
@@ -387,8 +387,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
 
         logger.info(update.effective_message.reply_to_message)
 
-        if update.effective_message.reply_to_message.message_id is not None:
-            messageid = update.effective_message.reply_to_message.message_id
+        if messageid is not None:
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
                 # Récupérez la position
