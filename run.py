@@ -361,8 +361,9 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
     Arguments:
         update: update from Telegram
     """
-    messageid = update.effective_message.reply_to_message.message_id
+
     api = MetaApi(API_KEY)
+    messageid = update.effective_message.reply_to_message.message_id
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -384,9 +385,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         # wait until terminal state synchronized to the local state
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
-
-        logger.info(update.effective_message.reply_to_message)
-
+        
         if messageid is not None:
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
@@ -662,8 +661,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     try: 
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
-        logger.info(trade)
-
+        
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid Trade')
@@ -836,11 +834,19 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     cles_serializables = list(signalInfos_converted.keys())
 
     try: 
-       
+
+        """""
+        # parses signal from Telegram message and determines the trade to edit 
+        if messageid is None:
+            trade_id = signalInfos_converted[messageid][0]
+            
+        else:
+            trade_id = signalInfos_converted[messageid][1]
+        """
+        
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
-        logger.info(trade)
-
+        
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid Trade')
@@ -848,8 +854,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-        logger.info(trade)
-
+       
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
@@ -865,8 +870,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     
     # Modifiez le stoploss des positions de la liste
     resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
-    logger.info(resultedit)
-
+ 
     # removes trade from user context data
     context.user_data['trade'] = None
 
