@@ -825,7 +825,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
 
-    #messageid = update.effective_message.reply_to_message.message_id
+    messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
     #trade_id = 0
 
@@ -836,16 +836,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     #cles_serializables = list(signalInfos_converted.keys())
 
     try: 
-
-        """""
-        # parses signal from Telegram message and determines the trade to edit 
-        if messageid is None:
-            trade_id = signalInfos_converted[messageid][0]
-            
-        else:
-            trade_id = signalInfos_converted[messageid][1]
-        """
-        
+       
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
         
