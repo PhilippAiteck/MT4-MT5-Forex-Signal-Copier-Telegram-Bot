@@ -388,9 +388,16 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
 
         logger.info(update.effective_message)
         logger.info(update.effective_message.reply_to_message)
-        logger.info(update.effective_message.reply_to_message.message_id)
+        #logger.info(update.effective_message.reply_to_message.message_id)
 
-        if update.effective_message.reply_to_message is not None:
+        if update.effective_message.reply_to_message is None:
+            positions = await connection.get_positions()
+            for position in positions:
+                if position['symbol'] == trade['symbol']:
+                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                    update.effective_message.reply_text(f"BreakEven défini pour les positions de {trade['symbol']}.")
+        else:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
@@ -407,17 +414,8 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
                         await connection.modify_position(position_id, stop_loss=trade['stoploss'], take_profit=takeprofit)
                         update.effective_message.reply_text(f"SL défini pour la position {position_id}.")
-
                 else:
                     update.effective_message.reply_text(f"La position n'a pas été trouvée.")
-
-        else:
-            positions = await connection.get_positions()
-            for position in positions:
-                if position['symbol'] == trade['symbol']:
-                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                    update.effective_message.reply_text(f"BreakEven défini pour les positions de {trade['symbol']}.")
         
 
     except Exception as error:
