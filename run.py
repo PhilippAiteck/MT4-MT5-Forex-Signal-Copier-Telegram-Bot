@@ -384,7 +384,9 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         # wait until terminal state synchronized to the local state
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
-        
+
+        logger.info(update.effective_message.reply_to_message)
+
         if update.effective_message.reply_to_message.message_id is not None:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
@@ -831,7 +833,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
 
     # Sérialisation des clés "key"
-    cles_serializables = list(signalInfos_converted.keys())
+    #cles_serializables = list(signalInfos_converted.keys())
 
     try: 
 
@@ -854,7 +856,8 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-       
+        logger.info(trade)
+
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
@@ -870,7 +873,8 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     
     # Modifiez le stoploss des positions de la liste
     resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
- 
+    logger.info(resultedit)
+
     # removes trade from user context data
     context.user_data['trade'] = None
 
