@@ -386,9 +386,9 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        update.effective_message.reply_text(update.effective_message)
-        update.effective_message.reply_text(update.effective_message.reply_to_message)
-        update.effective_message.reply_text(update.effective_message.reply_to_message.message_id)
+        logger.info(update.effective_message)
+        logger.info(update.effective_message.reply_to_message)
+        logger.info(update.effective_message.reply_to_message.message_id)
 
         if update.effective_message.reply_to_message is not None:
             messageid = update.effective_message.reply_to_message.message_id
