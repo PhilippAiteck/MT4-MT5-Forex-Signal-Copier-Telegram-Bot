@@ -385,8 +385,12 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         # wait until terminal state synchronized to the local state
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
-        
-        if update.effective_message.reply_to_message.message_id is not None:
+
+        update.effective_message.reply_text(update.effective_message)
+        update.effective_message.reply_text(update.effective_message.reply_to_message)
+        update.effective_message.reply_text(update.effective_message.reply_to_message.message_id)
+
+        if update.effective_message.reply_to_message is not None:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
