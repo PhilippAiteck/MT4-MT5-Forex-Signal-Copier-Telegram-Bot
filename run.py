@@ -386,6 +386,9 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
+        # obtains account information from MetaTrader server
+        #account_information = await connection.get_account_information()
+
         #logger.info(update.effective_message)
         #logger.info(update.effective_message.reply_to_message)
         #logger.info(update.effective_message.reply_to_message.message_id)
@@ -393,10 +396,13 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         if update.effective_message.reply_to_message is None:
             positions = await connection.get_positions()
             for position in positions:
-                if position.symbol == trade['symbol']:
+                #if account_information['broker'] == 'EightCap Global Ltd':
+                #    trade['Symbol'] = trade['Symbol']+".b"
+                
+                if position['symbol'] == trade['symbol']:
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position.id, stop_loss=position.openPrice, take_profit=position.takeProfit)
-                    update.effective_message.reply_text(f"BreakEven défini pour {trade['symbol']}.")
+                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                    update.effective_message.reply_text(f"BreakEven défini pour {position['symbol']}.")
                 else:
                     update.effective_message.reply_text(f"Aucune position n'est ouverte pour le Symbol {trade['symbol']}")
         else:
