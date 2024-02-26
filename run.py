@@ -130,11 +130,11 @@ def ParseSignal(signal: str) -> dict:
             #trade['TP'] = [0, 0, 0]
 
             if(trade['OrderType'] == 'ACHAT'):
-                trade['StopLoss'] = float(trade['Entry'] - 900)
+                trade['StopLoss'] = float(trade['Entry'] - 1000)
                 trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
 
             if(trade['OrderType'] == 'VENTE'):
-                trade['StopLoss'] = float(trade['Entry'] + 900)
+                trade['StopLoss'] = float(trade['Entry'] + 1000)
                 trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
 
         else:
@@ -203,24 +203,24 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         if currency == 'XOF':
             if(balance <= 296000):
-                trade['PositionSize'] = 0.03
-
-            elif(balance > 296000 and balance < 593000):
                 trade['PositionSize'] = 0.06
 
-            else:
+            elif(balance > 296000 and balance < 593000):
                 trade['PositionSize'] = 0.09
+
+            else:
+                trade['PositionSize'] = 0.12
 
         else:
 
             if(balance <= 499):
-                trade['PositionSize'] = 0.09
+                trade['PositionSize'] = 0.06
 
             elif(balance > 499 and balance < 1000):
-                trade['PositionSize'] = 0.18
+                trade['PositionSize'] = 0.09
 
             else:
-                trade['PositionSize'] = 0.27
+                trade['PositionSize'] = 0.12
 
     else:
 
@@ -324,8 +324,6 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        # Close the position
-        result = await connection.close_position(trade_id)
         
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
@@ -335,6 +333,8 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         #logger.info(position)
 
         if('TP1'.lower() in update.effective_message.text.lower()):
+            # Close the position
+            result = await connection.close_position(trade_id)
             # Appliquez un breakeven pour les deux dernières positions de la liste
             for position_id in signalInfos_converted[messageid][1:]:
                 # Récupérez la position
@@ -398,7 +398,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
             for position in positions:
                 #if account_information['broker'] == 'EightCap Global Ltd':
                 #    trade['Symbol'] = trade['Symbol']+".b"
-                
+
                 if position['symbol'] == trade['symbol']:
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
                     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
@@ -1025,6 +1025,7 @@ def handle_message(update, context):
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
+        r"\bCLOSE\b": TakeProfitTrade, # message handler to Take Profit
 
         r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
         r"\bBE\b": EditStopLossTrade, # message handler for edit SL
