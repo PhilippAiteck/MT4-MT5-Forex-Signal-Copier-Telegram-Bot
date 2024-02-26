@@ -209,7 +209,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
                 trade['PositionSize'] = 0.09
 
             else:
-                trade['PositionSize'] = 0.12
+                trade['PositionSize'] = 0.18
 
         else:
 
@@ -220,7 +220,7 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
                 trade['PositionSize'] = 0.09
 
             else:
-                trade['PositionSize'] = 0.12
+                trade['PositionSize'] = 0.18
 
     else:
 
