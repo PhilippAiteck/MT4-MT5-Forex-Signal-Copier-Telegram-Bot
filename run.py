@@ -832,6 +832,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
     trade_id = 0
+    trade = {}
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -854,7 +855,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted))
+        resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -953,6 +954,8 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
 
     #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
+    trade_id = 0
+
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -996,7 +999,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     # Modifiez le stoploss des positions de la liste
-    resultclose = asyncio.run(CloseTrade(update, trade, signalInfos_converted))
+    resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
