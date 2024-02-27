@@ -76,7 +76,7 @@ def ParseSignal(signal: str) -> dict:
     elif('BE' in signal[0] or 'CLOSE ALL' in signal[0] ):
         # extract the StopLoss
         trade['symbol'] = (signal[0].split())[-1]
-        #trade['ordertype'] = (signal[0].split())[-2]
+        trade['ordertype'] = (signal[0].split())[-2]
 
     else:
         # determines the order type of the trade
@@ -370,9 +370,14 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
                 if position['symbol'] == trade['symbol']:
                     # Fermez les positions du symbol spécifié 
                     result = await connection.close_position(position['id'])
+                    update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes.")
                     logger.info(result)
-                    update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes 💰.")
-       
+                elif (position['type'].split('_'))[-1] == trade['ordertype'] and position['symbol'] == trade['symbol']:
+                    # Fermez les positions du symbol et selon le type d'orde spécifié 
+                    result = await connection.close_position(position['id'])
+                    update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
+                    logger.info(result)
+
         elif update.effective_message.reply_to_message is not None and trade_id == 0:
             messageid = update.effective_message.reply_to_message.message_id
             # Fermez toutes les positions de la liste
@@ -385,6 +390,7 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         else:
             # Close the position
             result = await connection.close_position(trade_id)
+            update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
 
             if('TP1'.lower() in update.effective_message.text.lower()):
                 messageid = update.effective_message.reply_to_message.message_id
