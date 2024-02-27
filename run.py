@@ -73,10 +73,10 @@ def ParseSignal(signal: str) -> dict:
         # extract the StopLoss
         trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('BE'.lower() in signal[0].lower()):
+    elif('BE' in signal[0] or 'CLOSE ALL' in signal[0] ):
         # extract the StopLoss
         trade['symbol'] = (signal[0].split())[-1]
-        #trade['ordertype'] = (signal[0].split())[-3]
+        #trade['ordertype'] = (signal[0].split())[-2]
 
     else:
         # determines the order type of the trade
@@ -126,16 +126,16 @@ def ParseSignal(signal: str) -> dict:
             trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
             trade['Entry'] = float((trade['Entry'].split('-'))[0])
 
-            #trade['StopLoss'] = 0
+            trade['StopLoss'] = 0
             #trade['TP'] = [0, 0, 0]
 
             if(trade['OrderType'] == 'ACHAT'):
-                trade['StopLoss'] = float(trade['Entry'] - 1000)
-                trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
+                #trade['StopLoss'] = float(trade['Entry'] - 1500)
+                trade['TP'] = [trade['Entry'] + 1000, trade['Entry'] + 2000, trade['Entry'] + 3000]
 
             if(trade['OrderType'] == 'VENTE'):
-                trade['StopLoss'] = float(trade['Entry'] + 1000)
-                trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
+                #trade['StopLoss'] = float(trade['Entry'] + 1500)
+                trade['TP'] = [trade['Entry'] - 1000, trade['Entry'] - 2000, trade['Entry'] - 3000]
 
         else:
 
@@ -202,15 +202,33 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         if currency == 'XOF':
-            if(balance <= 296000):
+            if(balance <= 301571):
                 trade['PositionSize'] = 0.06
 
-            elif(balance > 296000 and balance < 593000):
+            elif(balance > 301571 and balance < 604351):
                 trade['PositionSize'] = 0.09
 
-            else:
+            elif(balance > 604351 and balance < 1208702):
+                trade['PositionSize'] = 0.15
+
+            elif(balance > 1208702 and balance < 1813054):
                 trade['PositionSize'] = 0.18
 
+            elif(balance > 1813054 and balance < 2417405):
+                trade['PositionSize'] = 0.21
+
+            elif(balance > 2417405 and balance < 3021757):
+                trade['PositionSize'] = 0.24
+
+            elif(balance > 3021757 and balance < 3626108):
+                trade['PositionSize'] = 0.27
+
+            elif(balance > 3626108 and balance < 4230459):
+                trade['PositionSize'] = 0.30
+
+            else:
+                trade['PositionSize'] = 0.33
+                
         else:
 
             if(balance <= 499):
@@ -219,8 +237,27 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
             elif(balance > 499 and balance < 1000):
                 trade['PositionSize'] = 0.09
 
-            else:
+            elif(balance > 1000 and balance < 2000):
+                trade['PositionSize'] = 0.15
+
+            elif(balance > 2000 and balance < 3000):
                 trade['PositionSize'] = 0.18
+
+            elif(balance > 3000 and balance < 4000):
+                trade['PositionSize'] = 0.21
+
+            elif(balance > 4000 and balance < 5000):
+                trade['PositionSize'] = 0.24
+
+            elif(balance > 5000 and balance < 6000):
+                trade['PositionSize'] = 0.27
+
+            elif(balance > 6000 and balance < 7000):
+                trade['PositionSize'] = 0.30
+
+            else:
+                trade['PositionSize'] = 0.33
+
 
     else:
 
@@ -293,14 +330,13 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
+async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
     """Close ongoing trades.
 
     Arguments:
         update: update from Telegram
     """
     api = MetaApi(API_KEY)
-    messageid = update.effective_message.reply_to_message.message_id
     #update.effective_message.reply_text(signalInfos_converted)
 
     try:
@@ -324,28 +360,48 @@ async def CloseTrade(update: Update, trade_id, signalInfos_converted) -> None:
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
         #profit = position['profit']
 
-        update.effective_message.reply_text(f"'TP' Position {trade_id} fermée avec succes 💰.")
-        #logger.info(position)
+        if update.effective_message.reply_to_message is None and trade_id == 0:
+            positions = await connection.get_positions()
+            for position in positions:
+                if position['symbol'] == trade['symbol']:
+                    # Fermez les positions du symbol spécifié 
+                    result = await connection.close_position(position['id'])
+                    logger.info(result)
+                    if result:
+                        update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes 💰.")
+                    else:
+                        update.effective_message.reply_text(f"Aucune position n'est ouverte pour le Symbol {trade['symbol']}")
+        
+        elif update.effective_message.reply_to_message is not None and trade_id == 0:
+            messageid = update.effective_message.reply_to_message.message_id
+            # Fermez toutes les positions de la liste
+            for position_id in signalInfos_converted[messageid]:
+                # Close the position
+                result = await connection.close_position(position_id)
+                update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
+                logger.info(result)
 
-        if('TP1'.lower() in update.effective_message.text.lower()):
+        else:
             # Close the position
             result = await connection.close_position(trade_id)
-            # Appliquez un breakeven pour les deux dernières positions de la liste
-            for position_id in signalInfos_converted[messageid][1:]:
-                # Récupérez la position
-                position = await connection.get_position(position_id)
-                if position is not None:
-                    opening_price = position['openPrice']
-                    takeprofit = position['takeProfit']
-                    await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
-                    update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
-                else:
-                    update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
+
+            if('TP1'.lower() in update.effective_message.text.lower()):
+                messageid = update.effective_message.reply_to_message.message_id
+                # Appliquez un breakeven pour les deux dernières positions de la liste
+                for position_id in signalInfos_converted[messageid][1:]:
+                    # Récupérez la position
+                    position = await connection.get_position(position_id)
+                    if position is not None:
+                        opening_price = position['openPrice']
+                        takeprofit = position['takeProfit']
+                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
+                    else:
+                        update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
 
 
         return result
@@ -790,7 +846,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     try: 
 
         # parses signal from Telegram message and determines the trade to close 
-        if('TP1'.lower() in update.effective_message.text.lower() or 'SECURE'.lower() in update.effective_message.text.lower() or 'CLOSE'.lower() in update.effective_message.text.lower() or 'move'.lower() in update.effective_message.text.lower()  and messageid in cles_serializables):
+        if('TP1'.lower() in update.effective_message.text.lower() or 'SECURE'.lower() in update.effective_message.text.lower() or 'move'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
             trade_id = signalInfos_converted[messageid][0]
             
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
@@ -801,7 +857,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted))
+        resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted, trade))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -880,6 +936,70 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
     
     # Modifiez le stoploss des positions de la liste
     resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
+ 
+    # removes trade from user context data
+    context.user_data['trade'] = None
+
+    return ConversationHandler.END
+
+def CloseAllTrade(update: Update, context: CallbackContext) -> int:
+    """Starts process of parsing TP signal and closing trade on MetaTrader account.
+
+    Arguments:
+        update: update from Telegram
+        context: CallbackContext object that stores commonly used objects in handler callbacks
+
+    """
+
+    # checks if the trade has already been parsed or not
+    #if(context.user_data['trade'] == None):
+
+    #messageid = update.effective_message.reply_to_message.message_id
+    signalInfos = read_data_from_json()
+
+    # Convertir les valeurs de type chaîne en entiers
+    signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
+
+    # Sérialisation des clés "key"
+    #cles_serializables = list(signalInfos_converted.keys())
+
+    try: 
+
+        """""
+        # parses signal from Telegram message and determines the trade to edit 
+        if messageid is None:
+            trade_id = signalInfos_converted[messageid][0]
+            
+        else:
+            trade_id = signalInfos_converted[messageid][1]
+        """
+        
+        # parses signal from Telegram message
+        trade = ParseSignal(update.effective_message.text)
+        
+        # checks if there was an issue with parsing the trade
+        if(not(trade)):
+            raise Exception('Invalid close signal')
+
+        # sets the user context trade equal to the parsed trade and extract messageID 
+        context.user_data['trade'] = trade
+        update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+       
+        # checks if there was an issue with parsing the trade
+        #if(not(signalInfos)):
+        #    raise Exception('Invalid Close Signal')
+
+    
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        errorMessage = f"There was an error parsing this signal 😕\n\nError: {error}\n\n"
+        update.effective_message.reply_text(errorMessage)
+
+        # returns to TRADE state to reattempt trade parsing
+        return TRADE
+    
+    # Modifiez le stoploss des positions de la liste
+    resultclose = asyncio.run(CloseTrade(update, trade, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -1025,10 +1145,12 @@ def handle_message(update, context):
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
-        r"\bCLOSE\b": TakeProfitTrade, # message handler to Take Profit
-
+        
         r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
         r"\bBE\b": EditStopLossTrade, # message handler for edit SL
+
+        r"\bCLOSE ALL\b": CloseAllTrade, # message handler to Take Profit
+
     }
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
