@@ -371,11 +371,8 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
                     # Fermez les positions du symbol spécifié 
                     result = await connection.close_position(position['id'])
                     logger.info(result)
-                    if result:
-                        update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes 💰.")
-                    else:
-                        update.effective_message.reply_text(f"Aucune position n'est ouverte pour le Symbol {trade['symbol']}")
-        
+                    update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes 💰.")
+       
         elif update.effective_message.reply_to_message is not None and trade_id == 0:
             messageid = update.effective_message.reply_to_message.message_id
             # Fermez toutes les positions de la liste
@@ -857,7 +854,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted, trade))
+        resultclose = asyncio.run(CloseTrade(update, trade_id, signalInfos_converted))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
