@@ -367,15 +367,15 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         if update.effective_message.reply_to_message is None and trade_id == 0:
             positions = await connection.get_positions()
             for position in positions:
-                if position['symbol'] == trade['symbol']:
-                    # Fermez les positions du symbol spécifié 
-                    result = await connection.close_position(position['id'])
-                    update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes.")
-                    logger.info(result)
-                elif (position['type'].split('_'))[-1] == trade['ordertype'] and position['symbol'] == trade['symbol']:
+                if (position['type'].split('_'))[-1] == trade['ordertype'] and position['symbol'] == trade['symbol']:
                     # Fermez les positions du symbol et selon le type d'orde spécifié 
                     result = await connection.close_position(position['id'])
                     update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
+                    logger.info(result)
+                elif position['symbol'] == trade['symbol']:
+                    # Fermez les positions du symbol spécifié 
+                    result = await connection.close_position(position['id'])
+                    update.effective_message.reply_text(f"Position {position['id']} > {position['symbol']} fermée avec succes.")
                     logger.info(result)
 
         elif update.effective_message.reply_to_message is not None and trade_id == 0:
