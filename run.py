@@ -203,60 +203,60 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         if currency == 'XOF':
             if(balance <= 301571):
-                trade['PositionSize'] = 0.06
+                trade['PositionSize'] = 0.03
 
             elif(balance > 301571 and balance < 604351):
-                trade['PositionSize'] = 0.09
+                trade['PositionSize'] = 0.06
 
             elif(balance > 604351 and balance < 1208702):
-                trade['PositionSize'] = 0.15
+                trade['PositionSize'] = 0.12
 
             elif(balance > 1208702 and balance < 1813054):
-                trade['PositionSize'] = 0.18
+                trade['PositionSize'] = 0.15
 
             elif(balance > 1813054 and balance < 2417405):
-                trade['PositionSize'] = 0.21
+                trade['PositionSize'] = 0.18
 
             elif(balance > 2417405 and balance < 3021757):
-                trade['PositionSize'] = 0.24
+                trade['PositionSize'] = 0.21
 
             elif(balance > 3021757 and balance < 3626108):
-                trade['PositionSize'] = 0.27
+                trade['PositionSize'] = 0.24
 
             elif(balance > 3626108 and balance < 4230459):
-                trade['PositionSize'] = 0.30
+                trade['PositionSize'] = 0.27
 
             else:
-                trade['PositionSize'] = 0.33
+                trade['PositionSize'] = 0.30
                 
         else:
 
             if(balance <= 499):
-                trade['PositionSize'] = 0.06
+                trade['PositionSize'] = 0.03
 
             elif(balance > 499 and balance < 1000):
-                trade['PositionSize'] = 0.09
+                trade['PositionSize'] = 0.06
 
             elif(balance > 1000 and balance < 2000):
-                trade['PositionSize'] = 0.15
+                trade['PositionSize'] = 0.12
 
             elif(balance > 2000 and balance < 3000):
-                trade['PositionSize'] = 0.18
+                trade['PositionSize'] = 0.15
 
             elif(balance > 3000 and balance < 4000):
-                trade['PositionSize'] = 0.21
+                trade['PositionSize'] = 0.18
 
             elif(balance > 4000 and balance < 5000):
-                trade['PositionSize'] = 0.24
+                trade['PositionSize'] = 0.21
 
             elif(balance > 5000 and balance < 6000):
-                trade['PositionSize'] = 0.27
+                trade['PositionSize'] = 0.24
 
             elif(balance > 6000 and balance < 7000):
-                trade['PositionSize'] = 0.30
+                trade['PositionSize'] = 0.27
 
             else:
-                trade['PositionSize'] = 0.33
+                trade['PositionSize'] = 0.30
 
 
     else:
