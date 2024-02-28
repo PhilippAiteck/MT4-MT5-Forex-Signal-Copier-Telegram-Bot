@@ -73,10 +73,11 @@ def ParseSignal(signal: str) -> dict:
         # extract the StopLoss
         trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('BE' in signal[0] or 'CLOSE ALL' in signal[0] ):
-        # extract the StopLoss
-        trade['symbol'] = (signal[0].split())[-1]
-        trade['ordertype'] = (signal[0].split())[-2]
+    elif('BE' in signal[0]):
+        trade['symbol'] = (signal[0].split())[1]
+    elif('CLOSE ALL' in signal[0]):
+        trade['ordertype'] = (signal[0].split())[2]
+        trade['symbol'] = (signal[0].split())[3]
 
     else:
         # determines the order type of the trade
@@ -457,16 +458,24 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
 
         if update.effective_message.reply_to_message is None:
             positions = await connection.get_positions()
-            for position in positions:
-                #if account_information['broker'] == 'EightCap Global Ltd':
-                #    trade['Symbol'] = trade['Symbol']+".b"
-
-                if position['symbol'] == trade['symbol']:
-                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                    update.effective_message.reply_text(f"BreakEven défini pour {position['symbol']}.")
+            # On vérifie si le symbol est spécifié
+            if trade['symbol']:
+                for position in positions:
+                    #if account_information['broker'] == 'EightCap Global Ltd':
+                    #    trade['Symbol'] = trade['Symbol']+".b"
+                    if position['symbol'] == trade['symbol']:
+                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                        await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                        update.effective_message.reply_text(f"BreakEven défini pour {trade['symbol']}.")
                 else:
-                    update.effective_message.reply_text(f"Aucune position n'est ouverte pour le Symbol {trade['symbol']}")
+                    update.effective_message.reply_text(f"Aucune position {trade['symbol']} n'est ouverte")
+                        
+            else:
+                update.effective_message.reply_text("Aucun symbol définit")
+            
+            # else:
+            #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+            #     update.effective_message.reply_text(f"BreakEven défini pour toutes les positions.")
         else:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
@@ -477,7 +486,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
                     opening_price = position['openPrice']
                     takeprofit = position['takeProfit']
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    if('BE'.lower() in update.effective_message.text.lower()):
+                    if('BE' in update.effective_message.text):
                         await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
                         update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
                     else:
