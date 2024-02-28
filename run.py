@@ -74,10 +74,24 @@ def ParseSignal(signal: str) -> dict:
         trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
         #trade['ordertype'] = (signal[0].split())[-3]
     elif('BE' in signal[0]):
-        trade['symbol'] = (signal[0].split())[1]
+        if (signal[0].split())[1]:
+            trade['symbol'] = (signal[0].split())[1]
+        else:
+            trade['symbol'] = ''
     elif('CLOSE ALL' in signal[0]):
-        trade['ordertype'] = (signal[0].split())[2]
-        trade['symbol'] = (signal[0].split())[3]
+        if (signal[0].split())[2] and (signal[0].split())[3]:
+            trade['ordertype'] = (signal[0].split())[2]
+            trade['symbol'] = (signal[0].split())[3]
+        elif (signal[0].split())[2]:
+            if (signal[0].split())[2] == 'BUY' or (signal[0].split())[2] == 'SELL':
+                trade['ordertype'] = (signal[0].split())[2]
+                trade['symbol'] = ''
+            else:
+                trade['ordertype'] = ''
+                trade['symbol'] = (signal[0].split())[2]
+        else:
+            trade['symbol'] = ''
+            trade['ordertype'] = ''
 
     else:
         # determines the order type of the trade
