@@ -1168,7 +1168,7 @@ def handle_message(update, context):
         r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
         r"\bBE\b": EditStopLossTrade, # message handler for edit SL
 
-        r"\bCLOSE ALL\b": CloseAllTrade, # message handler to Take Profit
+        r"\bCLOTURE\b": CloseAllTrade, # message handler to Take Profit
 
     }
 
