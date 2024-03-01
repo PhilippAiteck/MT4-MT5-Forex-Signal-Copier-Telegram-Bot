@@ -399,7 +399,7 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
+async def CloseTrade(update: Update, trade: dict, signalInfos_converted) -> None:
     """Close ongoing trades.
 
     Arguments:
@@ -433,10 +433,10 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
         #profit = position['profit']
 
-        if trade_id is not None: 
+        if trade['trade_id'] is not None: 
             # Close the position
-            result = await connection.close_position(trade_id)
-            update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
+            result = await connection.close_position(trade['trade_id'])
+            update.effective_message.reply_text(f"Position {trade['trade_id']} fermée avec succes. 💰")
             logger.info(result)
 
             if('TP1'.lower() in update.effective_message.text.lower()):
@@ -483,7 +483,7 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def EditTrade(update: Update, trade: dict, trade_id, signalInfos_converted):
+async def EditTrade(update: Update, trade: dict, signalInfos_converted):
     """Edit Stop ongoing trades.
 
     Arguments:
@@ -523,7 +523,7 @@ async def EditTrade(update: Update, trade: dict, trade_id, signalInfos_converted
 
         if update.effective_message.reply_to_message is None:
             if('BE' in update.effective_message.text):
-                position = await connection.get_position(trade_id)
+                position = await connection.get_position(trade['trade_id'])
                 # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
                 await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                 update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
@@ -537,7 +537,7 @@ async def EditTrade(update: Update, trade: dict, trade_id, signalInfos_converted
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
                         await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                        update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
+                        update.effective_message.reply_text(f"Nouveau Stop définit pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
                                     
                 # else:
                 #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
@@ -920,8 +920,9 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
-    trade_id = 0
+    #trade_id = 0
     trade = {}
+    trade['trade_id']
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -934,17 +935,17 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
         # parses signal from Telegram message and determines the trade to close 
         if('TP1'.lower() in update.effective_message.text.lower() or 'SECURE'.lower() in update.effective_message.text.lower() or 'move'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            trade_id = signalInfos_converted[messageid][0]
+            trade['trade_id'] = signalInfos_converted[messageid][0]
             
         elif('TP2'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            trade_id = signalInfos_converted[messageid][1]
+            trade['trade_id'] = signalInfos_converted[messageid][1]
 
         elif('Fermez'.lower() in update.effective_message.text.lower() and messageid in cles_serializables):
-            trade_id = signalInfos_converted[messageid][2]
+            trade['trade_id'] = signalInfos_converted[messageid][2]
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
+        resultclose = asyncio.run(CloseTrade(update, trade, signalInfos_converted))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -979,7 +980,6 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
 
     #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
-    trade_id = 0
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -1023,13 +1023,9 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
-    
-    if trade['trade_id'] is not None: 
-        trade_id = trade['trade_id']
-        #update.effective_message.reply_text(trade_id)
-    
+        
     # Modifiez le stoploss des positions de la liste
-    resultedit = asyncio.run(EditTrade(update, trade, trade_id, signalInfos_converted))
+    resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -1050,8 +1046,6 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
 
     #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
-    trade_id = 0
-
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -1095,13 +1089,9 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
-    
-    if trade['trade_id'] is not None: 
-        trade_id = trade['trade_id']
-        #update.effective_message.reply_text(trade_id)
 
     # Fermerture des positions de la liste
-    resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
+    resultclose = asyncio.run(CloseTrade(update, trade, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
