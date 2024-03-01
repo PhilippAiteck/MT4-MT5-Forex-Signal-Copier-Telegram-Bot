@@ -169,7 +169,7 @@ def ParseSignal(signal: str) -> dict:
 
         else:
             
-            if('tp' in signal[1].lower()):
+            if('RISK' in signal[4].lower() or 'RISK' in signal[4].lower(3)):
                 trade['Symbol'] = (signal[0].split())[1]
                 trade['Entry'] = float((signal[0].split())[-1])
                 trade['TP'] = [float((signal[1].split())[-1])]
@@ -1231,7 +1231,9 @@ def handle_message(update, context):
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
-        r"\bTP\b": PlaceTrade, # message handler for entering trade
+        r"\bRISK\b": PlaceTrade, # message handler for entering trade
+        r"\b🔽\b": PlaceTrade, # message handler for entering trade
+        r"\b🔼\b": PlaceTrade, # message handler for entering trade
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         r"\b@\b": PlaceTrade, # message handler for entering trade
 
