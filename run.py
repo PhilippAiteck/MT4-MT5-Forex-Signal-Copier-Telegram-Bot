@@ -69,11 +69,27 @@ def ParseSignal(signal: str) -> dict:
     trade = {}
 
 
-    if('METTRE LE SL'.lower() in signal[0].lower()):
+    if('METTRE LE'.lower() in signal[0].lower()):
         # extract the StopLoss
-        trade['stoploss'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
+        trade['newstop'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
+    elif('PLACEZ LE'.lower() in signal[0].lower()):
+        # extract the StopLoss
+        trade['newstop'] = float(((signal[0].split())[4]))
+        if len(signal[0].split()) >= 8:
+            trade['ordertype'] = (signal[0].split())[6]
+            trade['symbol'] = (signal[0].split())[7]
+        elif len(signal[0].split()) >= 7:
+            if (signal[0].split())[6] == 'BUY' or (signal[0].split())[6] == 'SELL':
+                trade['ordertype'] = (signal[0].split())[6]
+                trade['symbol'] = ''
+            else:
+                trade['ordertype'] = ''
+                trade['symbol'] = (signal[0].split())[6]
+        else:
+            trade['symbol'] = ''
+            trade['ordertype'] = ''
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('CLOTURE' in signal[0] or 'BE' in signal[0]):
+    elif('CLOTUREZ' in signal[0] or 'BREAKEVEN' in signal[0]):
         if len(signal[0].split()) >= 3:
             trade['ordertype'] = (signal[0].split())[1]
             trade['symbol'] = (signal[0].split())[2]
@@ -87,6 +103,10 @@ def ParseSignal(signal: str) -> dict:
         else:
             trade['symbol'] = ''
             trade['ordertype'] = ''
+    #elif(signal[0].split())[1].isdigit:
+    elif('CLO' in signal[0] or 'BE' in signal[0]):
+        trade['trade_id'] = (signal[0].split())[-1]
+        #trade['symbol'] = ''
 
     else:
         # determines the order type of the trade
@@ -148,8 +168,23 @@ def ParseSignal(signal: str) -> dict:
                 trade['TP'] = [trade['Entry'] - 1000, trade['Entry'] - 2000, trade['Entry'] - 3000]
 
         else:
+            
+            if('tp' in signal[1].lower()):
+                trade['Symbol'] = (signal[0].split())[1]
+                trade['Entry'] = float((signal[0].split())[-1])
+                trade['TP'] = [float((signal[1].split())[-1])]
+                # checks if there's a TP2 and parses it
+                #if(len(signal) > 3):
+                if('tp' in signal[2].lower()):
+                    trade['TP'].append(float(signal[2].split()[-1]))
+                    trade['StopLoss'] = float((signal[3].split())[-1])
+                    trade['RiskFactor'] = float((signal[4].split())[-1])
+                else:
+                    trade['StopLoss'] = float((signal[2].split())[-1])
+                    trade['RiskFactor'] = float((signal[3].split())[-1])
 
-            if('🔽' in signal[0] or '🔼' in signal[0]):
+
+            elif('🔽' in signal[0] or '🔼' in signal[0]):
                 trade['Symbol'] = (signal[0].split())[0][1:]
                 trade['Entry'] = float((signal[0].split())[-1])
                 trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
@@ -159,36 +194,60 @@ def ParseSignal(signal: str) -> dict:
                     trade['StopLoss'] = float((signal[5].replace(' ','').split(':'))[-1])
                 else:
                     trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
+                
+                trade['RiskFactor'] = RISK_FACTOR
 
-            elif('Tp @'.lower() in signal[3].lower()):
-                if('limit'.lower() in trade['OrderType'].lower()):
-                    if('for'.lower() in signal[0]):
-                        trade['Symbol'] = (signal[0].split())[3]
-                    else:
-                        trade['Symbol'] = (signal[0].split())[0]
-                        #trade['Entry'] = float((signal[0].split())[-1])
-                else:
-                    trade['Symbol'] = (signal[0].split())[1]
-                if('#'.lower() in trade['Symbol'].lower()):
-                    trade['Symbol'].replace('#','')
-                trade['Entry'] = (signal[0].split())[-1]
-                trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
-                trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
-                if('tp2' in signal[4].lower()):
-                    trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
-
-            elif('slowly-layer'.lower() in signal[7].lower()):
+            
+            elif('slowly-layer' in signal[7].lower()):
                 trade['Symbol'] = (signal[0].split())[1]
                 trade['Entry'] = float((signal[0].split('-'))[1])
                 trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
                 trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
                 trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
+                
+                trade['RiskFactor'] = RISK_FACTOR
+
+
+            #elif('@'.lower() in signal[2].lower()):
+                # if len(signal) >= 4:
+                #     trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
+                #     trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
+                #     if len(signal) >= 5 and 'tp' in signal[4].lower():
+                #         trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
+                
+                # trade['RiskFactor'] = RISK_FACTOR
+
+            elif('@'.lower() in signal[2].lower()):
+                if('limit'.lower() in trade['OrderType'].lower()):
+                    if('for'.lower() in signal[0].lower()):
+                        trade['Symbol'] = (signal[0].split())[3]
+                    else:
+                        trade['Symbol'] = (signal[0].split())[0]
+                        #trade['Entry'] = float((signal[0].split())[-1])
+                else:
+                    trade['Symbol'] = (signal[0].split())[0]
+                if('#' in trade['Symbol']):
+                    trade['Symbol'] = (signal[0].split())[0][1:]
+                if('@' in (signal[0].split())[-1]):
+                    (signal[0].split())[-1].replace('@','')
+                
+                trade['Entry'] = float((signal[0].split())[-1])
+                trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
+                trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
+                if('tp' in signal[4].lower()):
+                    trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
+                
+                trade['RiskFactor'] = RISK_FACTOR
+
+
 
         if(trade['Symbol'].lower() == 'gold'): 
             trade['Symbol'] = 'XAUUSD'
     
         # adds risk factor to trade
-        trade['RiskFactor'] = RISK_FACTOR
+        #trade['RiskFactor'] = RISK_FACTOR
+
+    #logger.info(trade)
 
     return trade
 
@@ -374,31 +433,11 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
         #profit = position['profit']
 
-        if update.effective_message.reply_to_message is None and trade_id == 0:
-            positions = await connection.get_positions()
-            for position in positions:
-                if (not trade['symbol'] and not trade['ordertype']) \
-                    or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
-                    or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
-                    or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                    # Fermez la ou les position(s)  
-                    result = await connection.close_position(position['id'])
-                    update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
-                    logger.info(result)
-
-        elif update.effective_message.reply_to_message is not None and trade_id == 0:
-            messageid = update.effective_message.reply_to_message.message_id
-            # Fermez toutes les positions de la liste
-            for position_id in signalInfos_converted[messageid]:
-                # Close the position
-                result = await connection.close_position(position_id)
-                update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
-                logger.info(result)
-
-        else:
+        if trade_id is not None: 
             # Close the position
             result = await connection.close_position(trade_id)
             update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
+            logger.info(result)
 
             if('TP1'.lower() in update.effective_message.text.lower()):
                 messageid = update.effective_message.reply_to_message.message_id
@@ -411,8 +450,30 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
                         takeprofit = position['takeProfit']
                         await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
                         update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
-                    else:
-                        update.effective_message.reply_text(f"La position {position_id} n'a pas été trouvée.")
+
+
+        else:
+            if update.effective_message.reply_to_message is None:
+                positions = await connection.get_positions()
+                for position in positions:
+                    if (not trade['symbol'] and not trade['ordertype']) \
+                        or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
+                        or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
+                        or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
+                        # Fermez la ou les position(s)  
+                        result = await connection.close_position(position['id'])
+                        update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
+                        logger.info(result)
+
+            else:
+            #elif update.effective_message.reply_to_message is not None and trade_id == 0:
+                messageid = update.effective_message.reply_to_message.message_id
+                # Fermez toutes les positions de la liste
+                for position_id in signalInfos_converted[messageid]:
+                    # Close the position
+                    result = await connection.close_position(position_id)
+                    update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
+                    logger.info(result)
 
 
         return result
@@ -422,8 +483,8 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def EditTrade(update: Update, trade: dict, signalInfos_converted):
-    """Edit SL ongoing trades.
+async def EditTrade(update: Update, trade: dict, trade_id, signalInfos_converted):
+    """Edit Stop ongoing trades.
 
     Arguments:
         update: update from Telegram
@@ -461,22 +522,26 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         #logger.info(update.effective_message.reply_to_message.message_id)
 
         if update.effective_message.reply_to_message is None:
-            positions = await connection.get_positions()
-            # On vérifie si le symbol est spécifié
-            for position in positions:
-                if (not trade['symbol'] and not trade['ordertype']) \
-                    or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
-                    or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
-                    or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                    update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
+            if('BE' in update.effective_message.text):
+                position = await connection.get_position(trade_id)
+                # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
             else:
-                update.effective_message.reply_text(f"Aucune position n'est ouverte")
-                                
-            # else:
-            #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-            #     update.effective_message.reply_text(f"BreakEven défini pour toutes les positions.")
+                positions = await connection.get_positions()
+                # On vérifie si le symbol est spécifié
+                for position in positions:
+                    if (not trade['symbol'] and not trade['ordertype']) \
+                        or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
+                        or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
+                        or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
+                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                        await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                        update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
+                                    
+                # else:
+                #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                #     update.effective_message.reply_text(f"BreakEven défini pour toutes les positions.")
         else:
             messageid = update.effective_message.reply_to_message.message_id
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
@@ -486,21 +551,24 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
                 if position is not None:
                     opening_price = position['openPrice']
                     takeprofit = position['takeProfit']
+                    stoploss = position['stopLoss']
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    if('BE' in update.effective_message.text):
+                    if('BREAKEVEN' in update.effective_message.text):
                         await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
                         update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
-                    else:
+                    elif('SL' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                        await connection.modify_position(position_id, stop_loss=trade['stoploss'], take_profit=takeprofit)
-                        update.effective_message.reply_text(f"SL défini pour la position {position_id}.")
-                else:
-                    update.effective_message.reply_text(f"La position n'a pas été trouvée.")
+                        await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=takeprofit)
+                        update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position_id}.")
+                    elif('TP' in update.effective_message.text):
+                        # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                        await connection.modify_position(position_id, stop_loss=stoploss, take_profit=trade['newstop'])
+                        update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position_id}.")
         
 
     except Exception as error:
         logger.error(f'Error: {error}')
-        update.effective_message.reply_text(f"Failed to set new SL on the trades. Error: {error}")
+        update.effective_message.reply_text(f"Failed to set new Stop on the trades. Error: {error}")
 
 
 async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
@@ -752,10 +820,11 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-    
+        update.effective_message.reply_text(trade)
+
     except Exception as error:
         logger.error(f'Error: {error}')
-        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL\nEntry \nSL \nTP \n\nOr use the /cancel to command to cancel this action."
+        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL \nTP \nSL \n\nOr use the /cancel to command to cancel this action."
         update.effective_message.reply_text(errorMessage)
 
         # returns to TRADE state to reattempt trade parsing
@@ -768,7 +837,8 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         signalInfos[update.effective_message.message_id] = []
 
     # attempts connection to MetaTrader and places trade
-    tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    #tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    tradeid = ["409804691", "409804692", "409804693"]
 
     # adding tradeid values in signalInfos
     signalInfos[update.effective_message.message_id].extend(tradeid)
@@ -807,7 +877,7 @@ def CalculateTrade(update: Update, context: CallbackContext) -> int:
         
         except Exception as error:
             logger.error(f'Error: {error}')
-            errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL\nEntry \nSL \nTP \n\nOr use the /cancel to command to cancel this action."
+            errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL \nTP \nSL \n\nOr use the /cancel to command to cancel this action."
             update.effective_message.reply_text(errorMessage)
 
             # returns to CALCULATE to reattempt trade parsing
@@ -895,7 +965,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
     return ConversationHandler.END
 
-def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
+def EditStopTrade(update: Update, context: CallbackContext) -> int:
     """Starts process of parsing TP signal and closing trade on MetaTrader account.
 
     Arguments:
@@ -909,6 +979,7 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
 
     #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
+    trade_id = 0
 
     # Convertir les valeurs de type chaîne en entiers
     signalInfos_converted = {int(key): value for key, value in signalInfos.items()}
@@ -937,7 +1008,8 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-       
+        update.effective_message.reply_text(trade)
+
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
@@ -951,8 +1023,13 @@ def EditStopLossTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
+    
+    if trade['trade_id'] is not None: 
+        trade_id = trade['trade_id']
+        #update.effective_message.reply_text(trade_id)
+    
     # Modifiez le stoploss des positions de la liste
-    resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
+    resultedit = asyncio.run(EditTrade(update, trade, trade_id, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -1003,7 +1080,8 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-       
+        update.effective_message.reply_text(trade)
+
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
         #    raise Exception('Invalid Close Signal')
@@ -1017,7 +1095,12 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         # returns to TRADE state to reattempt trade parsing
         return TRADE
     
-    # Modifiez le stoploss des positions de la liste
+    
+    if trade['trade_id'] is not None: 
+        trade_id = trade['trade_id']
+        #update.effective_message.reply_text(trade_id)
+
+    # Fermerture des positions de la liste
     resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
  
     # removes trade from user context data
@@ -1160,15 +1243,20 @@ def handle_message(update, context):
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bTP\b": PlaceTrade, # message handler for entering trade
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+        r"\b@\b": PlaceTrade, # message handler for entering trade
 
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
         r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
         
-        r"\bMETTRE LE SL\b": EditStopLossTrade, # message handler for edit SL
-        r"\bBE\b": EditStopLossTrade, # message handler for edit SL
+        r"\bMETTRE LE\b": EditStopTrade, # message handler for edit SL
 
-        r"\bCLOTURE\b": CloseAllTrade, # message handler to Take Profit
+        r"\bPLACEZ LE\b": EditStopTrade, # message handler to Take Profit
+        r"\bBE\b": EditStopTrade, # message handler for edit SL
+        r"\bBREAKEVEN\b": EditStopTrade, # message handler for edit SL
+
+        r"\bCLO\b": CloseAllTrade, # message handler to Take Profit
+        r"\bCLOTUREZ\b": CloseAllTrade, # message handler to Take Profit
 
     }
 
