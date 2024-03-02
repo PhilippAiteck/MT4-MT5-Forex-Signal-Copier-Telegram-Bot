@@ -89,7 +89,7 @@ def ParseSignal(signal: str) -> dict:
             trade['symbol'] = ''
             trade['ordertype'] = ''
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('CLOSE' in signal[0] or 'BE' in signal[0]):
+    elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
         if len(signal[0].split()) >= 3:
             trade['ordertype'] = (signal[0].split())[1]
             trade['symbol'] = (signal[0].split())[2]
@@ -1260,11 +1260,13 @@ def handle_message(update, context):
         r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
 
         r"\bSL A\b": EditStopTrade, # message handler to edit SL
-        r"\bSL A\b": EditStopTrade, # message handler to edit TP
-        r"\bBE\b": EditStopTrade, # message handler for BREAKEVEN
+        r"\bTP A\b": EditStopTrade, # message handler to edit TP
 
-        r"\bCLOTURE\b": CloseAllTrade, # message handler to CLOSE ORDER By ORDERTYPE OR SYMBOL
+        r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
+        r"\bBREAKEVEN\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL
+        
         r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
+        r"\bCLOTURE\b": CloseAllTrade, # message handler to CLOSE Position By ORDERTYPE OR SYMBOL
 
     }
 
