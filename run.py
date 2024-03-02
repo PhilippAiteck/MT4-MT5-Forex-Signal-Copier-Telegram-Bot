@@ -72,24 +72,24 @@ def ParseSignal(signal: str) -> dict:
     if('METTRE LE'.lower() in signal[0].lower()):
         # extract the StopLoss
         trade['newstop'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
-    elif('PLACEZ LE'.lower() in signal[0].lower()):
+    elif('SL A'.lower() in signal[0].lower() or 'TP A'.lower() in signal[0].lower()):
         # extract the StopLoss
-        trade['newstop'] = float(((signal[0].split())[4]))
-        if len(signal[0].split()) >= 8:
-            trade['ordertype'] = (signal[0].split())[6]
-            trade['symbol'] = (signal[0].split())[7]
-        elif len(signal[0].split()) >= 7:
-            if (signal[0].split())[6] == 'BUY' or (signal[0].split())[6] == 'SELL':
-                trade['ordertype'] = (signal[0].split())[6]
+        trade['newstop'] = float(((signal[0].split())[2]))
+        if len(signal[0].split()) >= 6:
+            trade['ordertype'] = (signal[0].split())[4]
+            trade['symbol'] = (signal[0].split())[5]
+        elif len(signal[0].split()) >= 5:
+            if (signal[0].split())[4] == 'BUY' or (signal[0].split())[4] == 'SELL':
+                trade['ordertype'] = (signal[0].split())[4]
                 trade['symbol'] = ''
             else:
                 trade['ordertype'] = ''
-                trade['symbol'] = (signal[0].split())[6]
+                trade['symbol'] = (signal[0].split())[4]
         else:
             trade['symbol'] = ''
             trade['ordertype'] = ''
         #trade['ordertype'] = (signal[0].split())[-3]
-    elif('CLOTUREZ' in signal[0] or 'BREAKEVEN' in signal[0]):
+    elif('CLOSE' in signal[0] or 'BE' in signal[0]):
         if len(signal[0].split()) >= 3:
             trade['ordertype'] = (signal[0].split())[1]
             trade['symbol'] = (signal[0].split())[2]
@@ -104,7 +104,7 @@ def ParseSignal(signal: str) -> dict:
             trade['symbol'] = ''
             trade['ordertype'] = ''
     #elif(signal[0].split())[1].isdigit:
-    elif('CLO' in signal[0] or 'BE' in signal[0]):
+    elif('CLORE' in signal[0] or 'BE' in signal[0]):
         trade['trade_id'] = (signal[0].split())[-1]
         #trade['symbol'] = ''
 
@@ -433,47 +433,64 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
         #profit = position['profit']
 
-        if trade_id is not None: 
-            # Close the position
-            result = await connection.close_position(trade_id)
-            update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
-            logger.info(result)
-
-            if('TP1'.lower() in update.effective_message.text.lower()):
-                messageid = update.effective_message.reply_to_message.message_id
-                # Appliquez un breakeven pour les deux dernières positions de la liste
-                for position_id in signalInfos_converted[messageid][1:]:
-                    # Récupérez la position
-                    position = await connection.get_position(position_id)
-                    if position is not None:
-                        opening_price = position['openPrice']
-                        takeprofit = position['takeProfit']
-                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
-                        update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
-
-
-        else:
+        # Si le signal est donné sans ID de position
+        if trade_id == 0:
+            # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
+                # Récuperation de toutes les positions en cours
                 positions = await connection.get_positions()
+                # On boucle dans les resultats "positions"
                 for position in positions:
+                    # On verifie certaines conditions
                     if (not trade['symbol'] and not trade['ordertype']) \
                         or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                        # Fermez la ou les position(s)  
+                        # On ferme la ou les position(s) selon les conditions
                         result = await connection.close_position(position['id'])
                         update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
                         logger.info(result)
 
             else:
-            #elif update.effective_message.reply_to_message is not None and trade_id == 0:
+                # Sinon le signal est une reponse
+                # On récupère l'ID "messageid" du signal source
                 messageid = update.effective_message.reply_to_message.message_id
-                # Fermez toutes les positions de la liste
+                
+                # Précisons qu'apres un signal de trade reçu, chaque ID de position est 
+                # récupéré apres l'exécution des trades et enregistré dans le fichier 
+                # JSON sérialisé "signalInfos_converted" au format 
+                # {"messageid": ["position_id", "position_id", "position_id"], }
+                
+                # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
-                    # Close the position
+                    # On Ferme ensuite toutes les positions de la liste
                     result = await connection.close_position(position_id)
                     update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
                     logger.info(result)
+
+        else:
+            # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
+            # On ferme donc la position
+            result = await connection.close_position(trade_id)
+            update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
+            logger.info(result)
+
+            # Si cest le signal du prémier TAKEPROFIT
+            if('TP1'.lower() in update.effective_message.text.lower()):
+                # On recupère l'ID "messageid" du signal source
+                messageid = update.effective_message.reply_to_message.message_id
+                # On boucle dans la sous-liste "messageid" pour recupérer les deux derniers ID  
+                for position_id in signalInfos_converted[messageid][1:]:
+                    # Récupération des informations sur la position avec "position_id"
+                    position = await connection.get_position(position_id)
+                    # Si la position existe ou est en cour d'exécution 
+                    if position is not None:
+                        # Récupération du prix d'entré et take profit de la position 
+                        opening_price = position['openPrice']
+                        takeprofit = position['takeProfit']
+                        # Appliquez un breakeven pour sur la position de la liste
+                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
 
 
         return result
@@ -1037,7 +1054,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 def CloseAllTrade(update: Update, context: CallbackContext) -> int:
-    """Starts process of parsing TP signal and closing trade on MetaTrader account.
+    """Starts process of parsing Closing signal and closing trade on MetaTrader account.
 
     Arguments:
         update: update from Telegram
@@ -1060,31 +1077,24 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     #cles_serializables = list(signalInfos_converted.keys())
 
     try: 
-
-        """""
-        # parses signal from Telegram message and determines the trade to edit 
-        if messageid is None:
-            trade_id = signalInfos_converted[messageid][0]
-            
-        else:
-            trade_id = signalInfos_converted[messageid][1]
-        """
-        
+       
         # parses signal from Telegram message
         trade = ParseSignal(update.effective_message.text)
         
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid close signal')
+        
+        # checks if trade['trade_id'] exist
+        if trade['trade_id'] is not None: 
+            trade_id = trade['trade_id']
+            #update.effective_message.reply_text(trade_id)
 
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-        update.effective_message.reply_text(trade)
+        logger.info(trade)
 
-        # checks if there was an issue with parsing the trade
-        #if(not(signalInfos)):
-        #    raise Exception('Invalid Close Signal')
 
     
     except Exception as error:
@@ -1096,10 +1106,6 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         return TRADE
     
     
-    if trade['trade_id'] is not None: 
-        trade_id = trade['trade_id']
-        #update.effective_message.reply_text(trade_id)
-
     # Fermerture des positions de la liste
     resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
  
@@ -1247,18 +1253,18 @@ def handle_message(update, context):
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         r"\b@\b": PlaceTrade, # message handler for entering trade
 
-        r"\bPRENEZ LE\b": TakeProfitTrade, # message handler to Take Profit
-        r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
-        r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler to Take Profit
+        r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
+        r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one
+        #r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler for Take Profit
         
-        r"\bMETTRE LE\b": EditStopTrade, # message handler for edit SL
+        r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
 
-        r"\bPLACEZ LE\b": EditStopTrade, # message handler to Take Profit
-        r"\bBE\b": EditStopTrade, # message handler for edit SL
-        r"\bBREAKEVEN\b": EditStopTrade, # message handler for edit SL
+        r"\bSL A\b": EditStopTrade, # message handler to edit SL
+        r"\bSL A\b": EditStopTrade, # message handler to edit TP
+        r"\bBE\b": EditStopTrade, # message handler for BREAKEVEN
 
-        r"\bCLO\b": CloseAllTrade, # message handler to Take Profit
-        r"\bCLOTUREZ\b": CloseAllTrade, # message handler to Take Profit
+        r"\bCLOTURE\b": CloseAllTrade, # message handler to CLOSE ORDER By ORDERTYPE OR SYMBOL
+        r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
 
     }
 
