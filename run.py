@@ -1086,7 +1086,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
             raise Exception('Invalid close signal')
         
         # checks if trade['trade_id'] exist
-        if trade['trade_id'] is not None: 
+        if trade['trade_id'] != 0: 
             trade_id = trade['trade_id']
             #update.effective_message.reply_text(trade_id)
 
@@ -1094,7 +1094,6 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
         logger.info(trade)
-
 
     
     except Exception as error:
