@@ -559,9 +559,19 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
                         or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                        await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                        update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
+                        
+                        if('SL' in update.effective_message.text):
+                            # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                            await connection.modify_position(position['id'], stop_loss=trade['newstop'], take_profit=position['takeProfit'])
+                            update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position_id}.")
+                        elif('TP' in update.effective_message.text):
+                            # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                            await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
+                            update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position_id}.")
+                        else:
+                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                            await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                            update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
                                     
                 # else:
                 #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
