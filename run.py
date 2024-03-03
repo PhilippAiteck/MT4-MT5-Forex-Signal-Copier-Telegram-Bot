@@ -68,45 +68,45 @@ def ParseSignal(signal: str) -> dict:
 
     trade = {}
 
-
-    if('METTRE LE'.lower() in signal[0].lower()):
-        # extract the StopLoss
-        trade['newstop'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
-    elif('SL A'.lower() in signal[0].lower() or 'TP A'.lower() in signal[0].lower()):
-        # extract the StopLoss
-        trade['newstop'] = float(((signal[0].split())[2]))
-        if len(signal[0].split()) >= 6:
-            trade['ordertype'] = (signal[0].split())[4]
-            trade['symbol'] = (signal[0].split())[5]
-        elif len(signal[0].split()) >= 5:
-            if (signal[0].split())[4] == 'BUY' or (signal[0].split())[4] == 'SELL':
+    if len(signal) == 1:
+        if('METTRE LE'.lower() in signal[0].lower()):
+            # extract the StopLoss
+            trade['newstop'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
+        elif('SL A'.lower() in signal[0].lower() or 'TP A'.lower() in signal[0].lower()):
+            # extract the StopLoss
+            trade['newstop'] = float(((signal[0].split())[2]))
+            if len(signal[0].split()) == 6:
                 trade['ordertype'] = (signal[0].split())[4]
-                trade['symbol'] = ''
+                trade['symbol'] = (signal[0].split())[5]
+            elif len(signal[0].split()) == 5:
+                if (signal[0].split())[4] == 'BUY' or (signal[0].split())[4] == 'SELL':
+                    trade['ordertype'] = (signal[0].split())[4]
+                    trade['symbol'] = ''
+                else:
+                    trade['ordertype'] = ''
+                    trade['symbol'] = (signal[0].split())[4]
             else:
+                trade['symbol'] = ''
                 trade['ordertype'] = ''
-                trade['symbol'] = (signal[0].split())[4]
-        else:
-            trade['symbol'] = ''
-            trade['ordertype'] = ''
-        #trade['ordertype'] = (signal[0].split())[-3]
-    elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
-        if len(signal[0].split()) >= 3:
-            trade['ordertype'] = (signal[0].split())[1]
-            trade['symbol'] = (signal[0].split())[2]
-        elif len(signal[0].split()) >= 2:
-            if (signal[0].split())[1] == 'BUY' or (signal[0].split())[1] == 'SELL':
+            #trade['ordertype'] = (signal[0].split())[-3]
+        elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
+            if len(signal[0].split()) == 3:
                 trade['ordertype'] = (signal[0].split())[1]
-                trade['symbol'] = ''
+                trade['symbol'] = (signal[0].split())[2]
+            elif len(signal[0].split()) == 2:
+                if (signal[0].split())[1] == 'BUY' or (signal[0].split())[1] == 'SELL':
+                    trade['ordertype'] = (signal[0].split())[1]
+                    trade['symbol'] = ''
+                else:
+                    trade['ordertype'] = ''
+                    trade['symbol'] = (signal[0].split())[1]
             else:
+                trade['symbol'] = ''
                 trade['ordertype'] = ''
-                trade['symbol'] = (signal[0].split())[1]
-        else:
-            trade['symbol'] = ''
-            trade['ordertype'] = ''
-    #elif(signal[0].split())[1].isdigit:
-    elif('CLORE' in signal[0] or 'BE' in signal[0]):
-        trade['trade_id'] = (signal[0].split())[-1]
-        #trade['symbol'] = ''
+        #elif(signal[0].split())[1].isdigit:
+        elif('CLORE' in signal[0] or 'BE' in signal[0]):
+            trade['trade_id'] = (signal[0].split())[-1]
+            #trade['symbol'] = ''
 
     else:
         # determines the order type of the trade
