@@ -405,20 +405,16 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
     return table
 
 
-async def ConnectMetaTrader(update: Update, connection):
-    """Attempts connection to MetaAPI and MetaTrader to place trade.
+
+async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
+    """Close ongoing trades.
 
     Arguments:
         update: update from Telegram
-        trade: dictionary that stores trade information
-
-    Returns:
-        A coroutine that confirms that the connection to MetaAPI/MetaTrader and trade placement were successful
     """
-
-    # creates connection to MetaAPI
     api = MetaApi(API_KEY)
-    
+    #update.effective_message.reply_text(signalInfos_converted)
+
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
         initial_state = account.state
@@ -439,25 +435,6 @@ async def ConnectMetaTrader(update: Update, connection):
         # wait until terminal state synchronized to the local state
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
-
-        return connection
-
-    except Exception as error:
-        logger.error(f'Error: {error}')
-        update.effective_message.reply_text(f"Failed to connect to MetaTrader. Error: {error}")
-
-
-async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
-    """Close ongoing trades.
-
-    Arguments:
-        update: update from Telegram
-    """
-    connection = ''
-    #update.effective_message.reply_text(signalInfos_converted)
-
-    try:
-        asyncio.run(ConnectMetaTrader(update, connection))
 
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
@@ -787,7 +764,7 @@ async def ConnectPlaceTrade(update: Update, trade: dict, enterTrade: bool):
     return tradeid
 
 
-async def GetOngoingTrades(update: Update, context: CallbackContext) -> None:
+async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> None:
     """Retrieves information about all ongoing trades.
 
     Arguments:
@@ -1086,7 +1063,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
     #     #update.effective_message.reply_text(trade_id)
     
     # Modifiez le stoploss des positions de la liste
-    resultedit = asyncio.run(ConnectEditTrade(update, trade, signalInfos_converted))
+    resultedit = asyncio.run(ConnectCloseTrade(update, trade, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -1267,7 +1244,7 @@ def GetOpenTradeIDs(update: Update, context: CallbackContext):
     """
 
     # attempts connection to MetaTrader and retreive ongoing trade
-    asyncio.run(GetOngoingTrades(update, context))
+    asyncio.run(ConnectGetOngoingTrades(update, context))
 
     return
 
