@@ -103,7 +103,6 @@ def ParseSignal(signal: str) -> dict:
             else:
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
-        #elif(signal[0].split())[1].isdigit:
         elif('CLORE' in signal[0] or 'BE' in signal[0]):
             trade['trade_id'] = (signal[0].split())[-1]
             #trade['symbol'] = ''
@@ -1085,15 +1084,15 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         if(not(trade)):
             raise Exception('Invalid close signal')
         
-        # checks if trade['trade_id'] exist
-        if trade['trade_id'] != 0: 
-            trade_id = trade['trade_id']
-            #update.effective_message.reply_text(trade_id)
-
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
         logger.info(trade)
+
+        # checks if trade['trade_id'] exist
+        if trade['trade_id'] != 0: 
+            trade_id = trade['trade_id']
+            #update.effective_message.reply_text(trade_id)
 
     
     except Exception as error:
