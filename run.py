@@ -76,31 +76,39 @@ def ParseSignal(signal: str) -> dict:
             # extract the StopLoss
             trade['newstop'] = float(((signal[0].split())[2]))
             if len(signal[0].split()) == 6:
+                trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[4]
                 trade['symbol'] = (signal[0].split())[5]
             elif len(signal[0].split()) == 5:
                 if (signal[0].split())[4] == 'BUY' or (signal[0].split())[4] == 'SELL':
+                    trade['trade_id'] = ''
                     trade['ordertype'] = (signal[0].split())[4]
                     trade['symbol'] = ''
                 else:
+                    trade['trade_id'] = ''
                     trade['ordertype'] = ''
                     trade['symbol'] = (signal[0].split())[4]
             else:
+                trade['trade_id'] = ''
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
             #trade['ordertype'] = (signal[0].split())[-3]
         elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
             if len(signal[0].split()) == 3:
+                trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[1]
                 trade['symbol'] = (signal[0].split())[2]
             elif len(signal[0].split()) == 2:
                 if (signal[0].split())[1] == 'BUY' or (signal[0].split())[1] == 'SELL':
+                    trade['trade_id'] = ''
                     trade['ordertype'] = (signal[0].split())[1]
                     trade['symbol'] = ''
                 else:
+                    trade['trade_id'] = ''
                     trade['ordertype'] = ''
                     trade['symbol'] = (signal[0].split())[1]
             else:
+                trade['trade_id'] = ''
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
         elif('CLORE' in signal[0] or 'BE' in signal[0]):
@@ -433,7 +441,7 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         #profit = position['profit']
 
         # Si le signal est donné sans ID de position
-        if trade_id == 0:
+        if not trade_id:
             # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
@@ -1088,7 +1096,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         context.user_data['trade'] = trade
 
         # checks if trade['trade_id'] exist
-        if trade['trade_id'] != 0: 
+        if trade['trade_id']: 
             trade_id = trade['trade_id']
             #update.effective_message.reply_text(trade_id)
         
