@@ -573,20 +573,20 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
                 # Récupérez la position
                 position = await connection.get_position(position_id)
                 if position is not None:
-                    opening_price = position['openPrice']
-                    takeprofit = position['takeProfit']
-                    stoploss = position['stopLoss']
+                    #opening_price = position['openPrice']
+                    #takeprofit = position['takeProfit']
+                    #stoploss = position['stopLoss']
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
                     if('BREAKEVEN' in update.effective_message.text):
-                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        await connection.modify_position(position_id, stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                         update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
                     elif('SL' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                        await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=takeprofit)
+                        await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit'])
                         update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position_id}.")
                     elif('TP' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                        await connection.modify_position(position_id, stoploss, take_profit=trade['newstop'])
+                        await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
                         update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position_id}.")
         
 
