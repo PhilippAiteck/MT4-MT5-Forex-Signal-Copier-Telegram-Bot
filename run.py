@@ -1086,13 +1086,15 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.user_data['trade'] = trade
-        update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-        logger.info(trade)
 
         # checks if trade['trade_id'] exist
         if trade['trade_id'] != 0: 
             trade_id = trade['trade_id']
             #update.effective_message.reply_text(trade_id)
+        
+        update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
+        logger.info(trade)
+
 
     
     except Exception as error:
