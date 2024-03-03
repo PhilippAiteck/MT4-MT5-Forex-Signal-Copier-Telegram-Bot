@@ -457,7 +457,7 @@ def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_convert
     #update.effective_message.reply_text(signalInfos_converted)
 
     try:
-        asyncio.run(ConnectPlaceTrade(update, connection))
+        asyncio.run(ConnectMetaTrader(update, connection))
 
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
