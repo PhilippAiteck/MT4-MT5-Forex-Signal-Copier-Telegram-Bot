@@ -1336,7 +1336,7 @@ def write_data_to_json(data):
         asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
  """
 
-def main() -> None:
+async def main() -> None:
     """Runs the Telegram bot."""
 
     updater = Updater(TOKEN, use_context=True)
@@ -1385,7 +1385,7 @@ def main() -> None:
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
     
-    """
+    
     api = MetaApi(API_KEY)
     #update.effective_message.reply_text(signalInfos_converted)
 
@@ -1413,7 +1413,7 @@ def main() -> None:
     except Exception as error:
         logger.error(f'Error: {error}')
         #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
-    """
+    
 
     return
 
