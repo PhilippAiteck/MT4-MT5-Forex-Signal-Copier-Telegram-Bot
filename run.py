@@ -915,7 +915,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         signalInfos[update.effective_message.message_id] = []
 
     # attempts connection to MetaTrader and places trade
-    tradeid = asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], True))
+    tradeid = asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], True, context))
     #tradeid = ["409804691", "409804692", "409804693"]
 
     # adding tradeid values in signalInfos
@@ -962,7 +962,7 @@ def CalculateTrade(update: Update, context: CallbackContext) -> int:
             return CALCULATE
     
     # attempts connection to MetaTrader and calculates trade information
-    asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], False))
+    asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], False, context))
 
     # asks if user if they would like to enter or decline trade
     update.effective_message.reply_text("Would you like to enter this trade?\nTo enter, select: /yes\nTo decline, select: /no")
@@ -1022,7 +1022,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted))
+        resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted, context))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -1107,7 +1107,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
     #     #update.effective_message.reply_text(trade_id)
     
     # Modifiez le stoploss des positions de la liste
-    resultedit = asyncio.run(ConnectCloseTrade(update, trade, signalInfos_converted))
+    resultedit = asyncio.run(ConnectCloseTrade(update, trade, signalInfos_converted, context))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -1169,7 +1169,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     
     
     # Fermerture des positions de la liste
-    resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted))
+    resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted, context))
  
     # removes trade from user context data
     context.user_data['trade'] = None
