@@ -773,27 +773,37 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
     api = MetaApi(API_KEY)
 
     try:
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        initial_state = account.state
-        deployed_states = ['DEPLOYING', 'DEPLOYED']
+        # Vérifie si la connexion est déjà établie dans le contexte
+        if 'connection' not in context.user_data:
+            # Effectue la procédure de connexion à MetaTrader
+            account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+            initial_state = account.state
+            deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
-            logger.info('Deploying account')
-            await account.deploy()
+            if initial_state not in deployed_states:
+                #  wait until account is deployed and connected to broker
+                logger.info('Deploying account')
+                await account.deploy()
 
-        logger.info('Waiting for API server to connect to broker ...')
-        await account.wait_connected()
+            logger.info('Waiting for API server to connect to broker ...')
+            await account.wait_connected()
 
-        # connect to MetaApi API
-        connection = account.get_rpc_connection()
-        await connection.connect()
+            # connect to MetaApi API
+            connection = account.get_rpc_connection()
+            await connection.connect()
 
-        # wait until terminal state synchronized to the local state
-        logger.info('Waiting for SDK to synchronize to terminal state ...')
-        await connection.wait_synchronized()
+            # wait until terminal state synchronized to the local state
+            logger.info('Waiting for SDK to synchronize to terminal state ...')
+            await connection.wait_synchronized()
 
-        update.effective_message.reply_text("Successfully connected to MetaTrader! 👍🏾 \nRetrieving all ongoing trades ...")
+            # Stocke l'objet de connexion dans le contexte pour une utilisation future
+            context.user_data['connection'] = connection
+
+            update.effective_message.reply_text("Successfully connected to MetaTrader! 👍🏾 \nRetrieving all ongoing trades ...")
+
+        else:
+            # Récupère la connexion à partir du contexte
+            connection = context.user_data['connection']
 
         # Fetch open positions
         positions = await connection.get_positions()
@@ -1336,37 +1346,9 @@ def write_data_to_json(data):
         asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
  """
 
-async def main() -> None:
+def main() -> None:
     """Runs the Telegram bot."""
-
-    # Connect to Metatrader
-    api = MetaApi(API_KEY)
-
-    try:
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        initial_state = account.state
-        deployed_states = ['DEPLOYING', 'DEPLOYED']
-
-        if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
-            logger.info('Deploying account')
-            await account.deploy()
-
-        logger.info('Waiting for API server to connect to broker ...')
-        await account.wait_connected()
-
-        # connect to MetaApi API
-        connection = account.get_rpc_connection()
-        await connection.connect()
-
-        # wait until terminal state synchronized to the local state
-        logger.info('Waiting for SDK to synchronize to terminal state ...')
-        await connection.wait_synchronized()
-
-    except Exception as error:
-        logger.error(f'Error: {error}')
-        #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
-    
+  
     # Configuration du bot Telegram
     updater = Updater(TOKEN, use_context=True)
 
@@ -1418,4 +1400,4 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
