@@ -563,11 +563,11 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
                         if('SL' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
                             await connection.modify_position(position['id'], stop_loss=trade['newstop'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position_id}.")
+                            update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position['id']}.")
                         elif('TP' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                            await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
-                            update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position_id}.")
+                            await connection.modify_position(position['id'], stop_loss=position['stopLoss'], take_profit=trade['newstop'])
+                            update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position['id']}.")
                         else:
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
                             await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
