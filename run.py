@@ -1339,6 +1339,35 @@ def write_data_to_json(data):
 async def main() -> None:
     """Runs the Telegram bot."""
 
+    # Connect to Metatrader
+    api = MetaApi(API_KEY)
+
+    try:
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
+
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
+
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
+
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
+
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
+    
+    # Configuration du bot Telegram
     updater = Updater(TOKEN, use_context=True)
 
     # get the dispatcher to register handlers
@@ -1384,36 +1413,6 @@ async def main() -> None:
     # listens for incoming updates from Telegram
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
-    
-    
-    api = MetaApi(API_KEY)
-    #update.effective_message.reply_text(signalInfos_converted)
-
-    try:
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        initial_state = account.state
-        deployed_states = ['DEPLOYING', 'DEPLOYED']
-
-        if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
-            logger.info('Deploying account')
-            await account.deploy()
-
-        logger.info('Waiting for API server to connect to broker ...')
-        await account.wait_connected()
-
-        # connect to MetaApi API
-        connection = account.get_rpc_connection()
-        await connection.connect()
-
-        # wait until terminal state synchronized to the local state
-        logger.info('Waiting for SDK to synchronize to terminal state ...')
-        await connection.wait_synchronized()
-
-    except Exception as error:
-        logger.error(f'Error: {error}')
-        #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
-    
 
     return
 
