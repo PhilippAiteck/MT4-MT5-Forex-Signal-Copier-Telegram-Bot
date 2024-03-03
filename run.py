@@ -447,7 +447,7 @@ async def ConnectMetaTrader(update: Update, connection):
         update.effective_message.reply_text(f"Failed to connect to MetaTrader. Error: {error}")
 
 
-def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
+async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
     """Close ongoing trades.
 
     Arguments:
@@ -468,7 +468,7 @@ def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_convert
             # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
-                positions = connection.get_positions()
+                positions = await connection.get_positions()
                 # On boucle dans les resultats "positions"
                 for position in positions:
                     # On verifie certaines conditions
@@ -477,7 +477,7 @@ def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_convert
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         # On ferme la ou les position(s) selon les conditions
-                        result = connection.close_position(position['id'])
+                        result = await connection.close_position(position['id'])
                         update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
                         logger.info(result)
 
@@ -494,14 +494,14 @@ def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_convert
                 # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
                     # On Ferme ensuite toutes les positions de la liste
-                    result = connection.close_position(position_id)
+                    result = await connection.close_position(position_id)
                     update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
                     logger.info(result)
 
         else:
             # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
             # On ferme donc la position
-            result = connection.close_position(trade_id)
+            result = await connection.close_position(trade_id)
             update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
             logger.info(result)
 
@@ -512,14 +512,14 @@ def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_convert
                 # On boucle dans la sous-liste "messageid" pour recupérer les deux derniers ID  
                 for position_id in signalInfos_converted[messageid][1:]:
                     # Récupération des informations sur la position avec "position_id"
-                    position = connection.get_position(position_id)
+                    position = await connection.get_position(position_id)
                     # Si la position existe ou est en cour d'exécution 
                     if position is not None:
                         # Récupération du prix d'entré et take profit de la position 
                         opening_price = position['openPrice']
                         takeprofit = position['takeProfit']
                         # Appliquez un breakeven pour sur la position de la liste
-                        connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
                         update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
 
 
