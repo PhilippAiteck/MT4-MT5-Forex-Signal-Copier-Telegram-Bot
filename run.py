@@ -1385,6 +1385,7 @@ async def main() -> None:
     updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN, webhook_url=APP_URL + TOKEN)
     updater.idle()
     
+    """
     api = MetaApi(API_KEY)
     #update.effective_message.reply_text(signalInfos_converted)
 
@@ -1412,9 +1413,10 @@ async def main() -> None:
     except Exception as error:
         logger.error(f'Error: {error}')
         #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
+    """
 
     return
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
