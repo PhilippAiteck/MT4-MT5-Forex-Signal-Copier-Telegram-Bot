@@ -405,16 +405,20 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
     return table
 
 
-
-async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
-    """Close ongoing trades.
+async def ConnectMetaTrader(update: Update, connection):
+    """Attempts connection to MetaAPI and MetaTrader to place trade.
 
     Arguments:
         update: update from Telegram
-    """
-    api = MetaApi(API_KEY)
-    #update.effective_message.reply_text(signalInfos_converted)
+        trade: dictionary that stores trade information
 
+    Returns:
+        A coroutine that confirms that the connection to MetaAPI/MetaTrader and trade placement were successful
+    """
+
+    # creates connection to MetaAPI
+    api = MetaApi(API_KEY)
+    
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
         initial_state = account.state
@@ -436,6 +440,25 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
+        return connection
+
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        update.effective_message.reply_text(f"Failed to connect to MetaTrader. Error: {error}")
+
+
+def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_converted) -> None:
+    """Close ongoing trades.
+
+    Arguments:
+        update: update from Telegram
+    """
+    connection = ''
+    #update.effective_message.reply_text(signalInfos_converted)
+
+    try:
+        asyncio.run(ConnectPlaceTrade(update, connection))
+
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
         #profit = position['profit']
@@ -445,7 +468,7 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
             # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
-                positions = await connection.get_positions()
+                positions = connection.get_positions()
                 # On boucle dans les resultats "positions"
                 for position in positions:
                     # On verifie certaines conditions
@@ -454,7 +477,7 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         # On ferme la ou les position(s) selon les conditions
-                        result = await connection.close_position(position['id'])
+                        result = connection.close_position(position['id'])
                         update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
                         logger.info(result)
 
@@ -471,14 +494,14 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
                 # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
                     # On Ferme ensuite toutes les positions de la liste
-                    result = await connection.close_position(position_id)
+                    result = connection.close_position(position_id)
                     update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
                     logger.info(result)
 
         else:
             # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
             # On ferme donc la position
-            result = await connection.close_position(trade_id)
+            result = connection.close_position(trade_id)
             update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
             logger.info(result)
 
@@ -489,14 +512,14 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
                 # On boucle dans la sous-liste "messageid" pour recupérer les deux derniers ID  
                 for position_id in signalInfos_converted[messageid][1:]:
                     # Récupération des informations sur la position avec "position_id"
-                    position = await connection.get_position(position_id)
+                    position = connection.get_position(position_id)
                     # Si la position existe ou est en cour d'exécution 
                     if position is not None:
                         # Récupération du prix d'entré et take profit de la position 
                         opening_price = position['openPrice']
                         takeprofit = position['takeProfit']
                         # Appliquez un breakeven pour sur la position de la liste
-                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
                         update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
 
 
@@ -507,7 +530,7 @@ async def CloseTrade(update: Update, trade: dict, trade_id, signalInfos_converte
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def EditTrade(update: Update, trade: dict, signalInfos_converted):
+async def ConnectEditTrade(update: Update, trade: dict, signalInfos_converted):
     """Edit Stop ongoing trades.
 
     Arguments:
@@ -605,7 +628,7 @@ async def EditTrade(update: Update, trade: dict, signalInfos_converted):
         update.effective_message.reply_text(f"Failed to set new Stop on the trades. Error: {error}")
 
 
-async def ConnectMetaTrader(update: Update, trade: dict, enterTrade: bool):
+async def ConnectPlaceTrade(update: Update, trade: dict, enterTrade: bool):
     """Attempts connection to MetaAPI and MetaTrader to place trade.
 
     Arguments:
@@ -871,7 +894,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         signalInfos[update.effective_message.message_id] = []
 
     # attempts connection to MetaTrader and places trade
-    tradeid = asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], True))
+    tradeid = asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], True))
     #tradeid = ["409804691", "409804692", "409804693"]
 
     # adding tradeid values in signalInfos
@@ -918,7 +941,7 @@ def CalculateTrade(update: Update, context: CallbackContext) -> int:
             return CALCULATE
     
     # attempts connection to MetaTrader and calculates trade information
-    asyncio.run(ConnectMetaTrader(update, context.user_data['trade'], False))
+    asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], False))
 
     # asks if user if they would like to enter or decline trade
     update.effective_message.reply_text("Would you like to enter this trade?\nTo enter, select: /yes\nTo decline, select: /no")
@@ -978,7 +1001,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
+        resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -1063,7 +1086,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
     #     #update.effective_message.reply_text(trade_id)
     
     # Modifiez le stoploss des positions de la liste
-    resultedit = asyncio.run(EditTrade(update, trade, signalInfos_converted))
+    resultedit = asyncio.run(ConnectEditTrade(update, trade, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
@@ -1125,7 +1148,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     
     
     # Fermerture des positions de la liste
-    resultclose = asyncio.run(CloseTrade(update, trade, trade_id, signalInfos_converted))
+    resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
