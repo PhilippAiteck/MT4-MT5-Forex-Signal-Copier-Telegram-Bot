@@ -1336,7 +1336,7 @@ def write_data_to_json(data):
         asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
  """
 
-async def main() -> None:
+def main() -> None:
     """Runs the Telegram bot."""
 
     # # Connect to Metatrader
