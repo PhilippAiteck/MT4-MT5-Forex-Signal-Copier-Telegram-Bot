@@ -177,7 +177,7 @@ def ParseSignal(signal: str) -> dict:
         else:
             
             if('tp' in signal[1].lower()):
-                trade['Symbol'] = (signal[0].split())[1]
+                trade['Symbol'] = (signal[0].split())[0]
                 trade['Entry'] = float((signal[0].split())[-1])
                 trade['TP'] = [float((signal[1].split())[-1])]
                 # checks if there's a TP2 and parses it
