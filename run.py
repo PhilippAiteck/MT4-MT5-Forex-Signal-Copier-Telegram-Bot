@@ -1273,8 +1273,7 @@ def handle_message(update, context):
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bRISK\b": PlaceTrade, # message handler for entering trade
-        r"\b💵TP\b": PlaceTrade, # message handler for entering trade
-        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+        r"\bTP:\b": PlaceTrade, # message handler for entering trade
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         r"\bSL@\b": PlaceTrade, # message handler for entering trade
         r"\bSL @\b": PlaceTrade, # message handler for entering trade
