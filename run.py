@@ -163,15 +163,15 @@ def ParseSignal(signal: str) -> dict:
             trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
             trade['Entry'] = float((trade['Entry'].split('-'))[0])
 
-            trade['StopLoss'] = 0
+            #trade['StopLoss'] = 0
             #trade['TP'] = [0, 0, 0]
 
             if(trade['OrderType'] == 'ACHAT'):
-                #trade['StopLoss'] = float(trade['Entry'] - 1500)
+                trade['StopLoss'] = float(trade['Entry'] - 3000)
                 trade['TP'] = [trade['Entry'] + 1000, trade['Entry'] + 2000, trade['Entry'] + 3000]
 
             if(trade['OrderType'] == 'VENTE'):
-                #trade['StopLoss'] = float(trade['Entry'] + 1500)
+                trade['StopLoss'] = float(trade['Entry'] + 3000)
                 trade['TP'] = [trade['Entry'] - 1000, trade['Entry'] - 2000, trade['Entry'] - 3000]
 
         else:
@@ -274,6 +274,13 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     # calculates the stop loss in pips
     stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
     
+    # Convertion de la balance en dollar $
+
+    # exchange_rate = 0.0018  # Taux de change actuel de XOF à USD (à titre d'exemple)
+    # if currency == 'XOF':
+    #     amount_xof = balance
+    #     balance = amount_xof / exchange_rate
+
     #logger.info(stopLossPips)
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
@@ -1266,10 +1273,11 @@ def handle_message(update, context):
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bRISK\b": PlaceTrade, # message handler for entering trade
-        r"\b🔼\b": PlaceTrade, # message handler for entering trade
-        r"\b🔽\b": PlaceTrade, # message handler for entering trade
+        r"\b💵TP\b": PlaceTrade, # message handler for entering trade
+        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
-        r"\b@\b": PlaceTrade, # message handler for entering trade
+        r"\bSL@\b": PlaceTrade, # message handler for entering trade
+        r"\bSL @\b": PlaceTrade, # message handler for entering trade
 
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
         r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one
