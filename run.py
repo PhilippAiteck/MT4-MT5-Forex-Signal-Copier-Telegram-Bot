@@ -343,9 +343,12 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
 
 
     else:
-
-        # calculates the position size using stop loss and RISK FACTOR
-        trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
+        if currency == 'XOF':
+            if(balance <= 301571):
+                trade['PositionSize'] = 0.01
+        else:
+            # calculates the position size using stop loss and RISK FACTOR
+            trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
 
     # calculates the take profit(s) in pips
     for takeProfit in trade['TP']:
@@ -1273,7 +1276,8 @@ def handle_message(update, context):
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bRISK\b": PlaceTrade, # message handler for entering trade
-        r"\bTP:\b": PlaceTrade, # message handler for entering trade
+        r"\b💵TP\b": PlaceTrade, # message handler for entering trade
+        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         r"\bSL@\b": PlaceTrade, # message handler for entering trade
         r"\bSL @\b": PlaceTrade, # message handler for entering trade
