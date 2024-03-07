@@ -5,6 +5,7 @@ import math
 import os
 import re
 import json
+import requests
 
 try:
     from typing import Literal
@@ -50,6 +51,9 @@ FOREX = ['EURUSD', 'USDJPY', 'GBPUSD', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', '
 
 # RISK FACTOR
 RISK_FACTOR = float(os.environ.get("RISK_FACTOR"))
+
+# Variable temporaire pour stocker le taux de change
+exchange_rate = None
 
 # Helper Functions
 def ParseSignal(signal: str) -> dict:
@@ -274,13 +278,6 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
     # calculates the stop loss in pips
     stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
     
-    # Convertion de la balance en dollar $
-
-    # exchange_rate = 0.0018  # Taux de change actuel de XOF à USD (à titre d'exemple)
-    # if currency == 'XOF':
-    #     amount_xof = balance
-    #     balance = amount_xof / exchange_rate
-
     #logger.info(stopLossPips)
 
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
@@ -346,6 +343,11 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
         if currency == 'XOF':
             if(balance <= 301571):
                 trade['PositionSize'] = 0.01
+            else:
+                # Conversion de XOF en USD
+                amount_usd = xof_to_usd(balance)
+                balance = amount_usd
+
         else:
             # calculates the position size using stop loss and RISK FACTOR
             trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
@@ -1267,6 +1269,23 @@ def GetMessageTradeIDs(update: Update, context: CallbackContext):
 
     update.effective_message.reply_text(signalInfos)
 
+def get_exchange_rate():
+    global exchange_rate
+    # Vérifier si le taux de change a déjà été récupéré
+    if exchange_rate is None:
+        # Appel à une API de taux de change
+        response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
+        data = response.json()
+        # Récupération du taux de change USD/XOF
+        exchange_rate = data['rates']['XOF']
+    return exchange_rate
+
+def xof_to_usd(amount_xof):
+    # Obtenir le taux de change
+    exchange_rate = get_exchange_rate()
+    amount_usd = amount_xof / exchange_rate
+    return amount_usd
+
 # Fonction pour gérer les messages
 def handle_message(update, context):
     text_received = update.message.text
@@ -1276,8 +1295,8 @@ def handle_message(update, context):
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
         r"\bRISK\b": PlaceTrade, # message handler for entering trade
-        r"\b💵TP\b": PlaceTrade, # message handler for entering trade
-        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+        r"\b💲TP:\b": PlaceTrade, # message handler for entering trade
+        r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
         r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         r"\bSL@\b": PlaceTrade, # message handler for entering trade
         r"\bSL @\b": PlaceTrade, # message handler for entering trade
