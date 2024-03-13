@@ -491,11 +491,12 @@ async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_c
                             partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
                             result = await connection.close_position_partially(position['id'], partial_volume)
                             update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée partiellement avec succes.")
+                            logger.info(result)
                         else:
                             # On ferme entièrement la ou les position(s) selon les conditions
                             result = await connection.close_position(position['id'])
                             update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
-                        logger.info(result)
+                            logger.info(result)
 
             else:
                 # Sinon le signal est une reponse
@@ -514,24 +515,30 @@ async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_c
                         partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
                         result = await connection.close_position_partially(position_id, partial_volume)
                         update.effective_message.reply_text(f"Position {position_id} fermée partiellement avec succes.")
+                        logger.info(result)
                     else:
                         # On Ferme ensuite entièrement toutes les positions de la liste
                         result = await connection.close_position(position_id)
                         update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
-                    logger.info(result)
+                        logger.info(result)
 
         else:
             # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
             if 'partial' in trade and trade['partial'] is not None:
-                # Fermer la position partiellement
-                partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
-                result = await connection.close_position_partially(trade_id, partial_volume)
-                update.effective_message.reply_text(f"Position {trade_id} fermée partiellement avec succes.")
+                position = await connection.get_position(trade_id)
+                # Si la position existe ou est en cour d'exécution 
+                if position is not None:
+                    # Récupération du volume de la position et calcul du pourcentage a fermer
+                    partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
+                    # Fermer la position partiellement
+                    result = await connection.close_position_partially(trade_id, partial_volume)
+                    update.effective_message.reply_text(f"Position {trade_id} fermée partiellement avec succes.")
+                    logger.info(result)
             else:            
                 # On ferme donc la position
                 result = await connection.close_position(trade_id)
                 update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
-            logger.info(result)
+                logger.info(result)
 
             # Si cest le signal du prémier TAKEPROFIT
             if('TP1'.lower() in update.effective_message.text.lower()):
