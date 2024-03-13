@@ -97,7 +97,7 @@ def ParseSignal(signal: str) -> dict:
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
             #trade['ordertype'] = (signal[0].split())[-3]
-        elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
+        elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0] or 'PARTIAL' in signal[0]):
             if len(signal[0].split()) == 3:
                 trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[1]
@@ -115,7 +115,28 @@ def ParseSignal(signal: str) -> dict:
                 trade['trade_id'] = ''
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
-        elif('CLORE' in signal[0] or 'BE' in signal[0]):
+        elif('PARTIAL' in signal[0]):
+            trade['partial'] = float(((signal[0].split())[1]))
+            if len(signal[0].split()) == 4:
+                trade['trade_id'] = ''
+                trade['ordertype'] = (signal[0].split())[2]
+                trade['symbol'] = (signal[0].split())[3]
+            elif len(signal[0].split()) == 3:
+                if (signal[0].split())[2] == 'BUY' or (signal[0].split())[2] == 'SELL':
+                    trade['trade_id'] = ''
+                    trade['ordertype'] = (signal[0].split())[2]
+                    trade['symbol'] = ''
+                else:
+                    trade['trade_id'] = ''
+                    trade['ordertype'] = ''
+                    trade['symbol'] = (signal[0].split())[2]
+            else:
+                trade['trade_id'] = ''
+                trade['symbol'] = ''
+                trade['ordertype'] = ''
+        elif('CLORE' in signal[0] or 'BE' in signal[0] or 'PARTIEL' in signal[0]):
+            if (signal[0].split())[0] == 'PARTIEL':
+                trade['partial'] = float(((signal[0].split())[1]))
             trade['trade_id'] = (signal[0].split())[-1]
             #trade['symbol'] = ''
 
@@ -465,9 +486,15 @@ async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_c
                         or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                        # On ferme la ou les position(s) selon les conditions
-                        result = await connection.close_position(position['id'])
-                        update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
+                        if 'partial' in trade and trade['partial'] is not None:
+                            # Fermer la position partiellement
+                            partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
+                            result = await connection.close_position_partially(position['id'], partial_volume)
+                            update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée partiellement avec succes.")
+                        else:
+                            # On ferme entièrement la ou les position(s) selon les conditions
+                            result = await connection.close_position(position['id'])
+                            update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée avec succes.")
                         logger.info(result)
 
             else:
@@ -482,16 +509,28 @@ async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_c
                 
                 # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
-                    # On Ferme ensuite toutes les positions de la liste
-                    result = await connection.close_position(position_id)
-                    update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
+                    if 'partial' in trade and trade['partial'] is not None:
+                        # Fermer la position partiellement
+                        partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
+                        result = await connection.close_position_partially(position_id, partial_volume)
+                        update.effective_message.reply_text(f"Position {position_id} fermée partiellement avec succes.")
+                    else:
+                        # On Ferme ensuite entièrement toutes les positions de la liste
+                        result = await connection.close_position(position_id)
+                        update.effective_message.reply_text(f"Position {position_id} fermée avec succes.")
                     logger.info(result)
 
         else:
             # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
-            # On ferme donc la position
-            result = await connection.close_position(trade_id)
-            update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
+            if 'partial' in trade and trade['partial'] is not None:
+                # Fermer la position partiellement
+                partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
+                result = await connection.close_position_partially(trade_id, partial_volume)
+                update.effective_message.reply_text(f"Position {trade_id} fermée partiellement avec succes.")
+            else:            
+                # On ferme donc la position
+                result = await connection.close_position(trade_id)
+                update.effective_message.reply_text(f"Position {trade_id} fermée avec succes. 💰")
             logger.info(result)
 
             # Si cest le signal du prémier TAKEPROFIT
@@ -1315,6 +1354,8 @@ def handle_message(update, context):
         
         r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
         r"\bCLOTURE\b": CloseAllTrade, # message handler to CLOSE Position By ORDERTYPE OR SYMBOL
+        r"\bPARTIAL\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
+        r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
 
     }
 
