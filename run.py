@@ -1187,7 +1187,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     
     
     # Fermerture des positions de la liste
-    resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted))
+    resultclose = asyncio.run(ConnectCloseTrade(update, context, trade, trade_id, signalInfos_converted))
  
     # removes trade from user context data
     context.user_data['trade'] = None
