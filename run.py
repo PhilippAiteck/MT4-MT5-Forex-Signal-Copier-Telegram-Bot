@@ -471,7 +471,8 @@ async def ConnectCloseTrade(update: Update, context, trade: dict, trade_id, sign
 
         # Récupérer la connexion à partir du contexte de l'application
         connection = context.bot_data['mt_streaming_connection']
-
+        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
         #profit = position['profit']
