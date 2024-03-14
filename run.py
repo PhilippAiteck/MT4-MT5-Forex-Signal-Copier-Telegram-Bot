@@ -511,6 +511,7 @@ async def ConnectCloseTrade(update: Update, trade: dict, trade_id, signalInfos_c
                 # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
                     if 'partial' in trade and trade['partial'] is not None:
+                        position = await connection.get_position(position_id)
                         # Fermer la position partiellement
                         partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
                         result = await connection.close_position_partially(position_id, partial_volume)
