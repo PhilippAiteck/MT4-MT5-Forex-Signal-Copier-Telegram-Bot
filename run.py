@@ -97,7 +97,7 @@ def ParseSignal(signal: str) -> dict:
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
             #trade['ordertype'] = (signal[0].split())[-3]
-        elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0] or 'PARTIAL' in signal[0]):
+        elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
             if len(signal[0].split()) == 3:
                 trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[1]
