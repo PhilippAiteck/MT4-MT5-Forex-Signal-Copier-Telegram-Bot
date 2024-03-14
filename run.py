@@ -1445,12 +1445,21 @@ async def main() -> None:
     connection = account.get_streaming_connection()
     await connection.connect()
 
+    # access local copy of terminal state
+    terminalState = connection.terminal_state
+
     # Stockage de la connexion dans le contexte de l'application
     dp.bot_data['mt_streaming_connection'] = connection
 
     # wait until terminal state synchronized to the local state
     logger.info('Waiting for SDK to synchronize to terminal state ...')
     await connection.wait_synchronized()
+
+    print(terminalState.connected)
+    print(terminalState.connected_to_broker)
+    print(terminalState.account_information)
+    print(terminalState.positions)
+    print(terminalState.orders)
 
     #logger.error(f'Error: {error}')
     #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
