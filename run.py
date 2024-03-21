@@ -937,7 +937,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         signalInfos[update.effective_message.message_id] = []
 
     # attempts connection to MetaTrader and places trade
-    tradeid = asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], True))
+    tradeid = asyncio.run(ConnectPlaceTrade(update, context, context.user_data['trade'], True))
     #tradeid = ["409804691", "409804692", "409804693"]
 
     # adding tradeid values in signalInfos
