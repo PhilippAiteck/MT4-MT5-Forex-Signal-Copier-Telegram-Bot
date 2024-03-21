@@ -76,30 +76,9 @@ def ParseSignal(signal: str) -> dict:
         if('METTRE LE'.lower() in signal[0].lower()):
             # extract the Stop
             trade['newstop'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
-        elif('SL'.lower() in signal[0].lower() or 'TP'.lower() in signal[0].lower()):
-            # extract the Stop
-            trade['newstop'] = float(((signal[0].split())[1]))
-            if len(signal[0].split()) == 5:
-                trade['trade_id'] = ''
-                trade['ordertype'] = (signal[0].split())[3]
-                trade['symbol'] = (signal[0].split())[4]
-            elif len(signal[0].split()) == 4:
-                if (signal[0].split())[3] == 'BUY' or (signal[0].split())[3] == 'SELL':
-                    trade['trade_id'] = ''
-                    trade['ordertype'] = (signal[0].split())[3]
-                    trade['symbol'] = ''
-                else:
-                    trade['trade_id'] = ''
-                    trade['ordertype'] = ''
-                    trade['symbol'] = (signal[0].split())[3]
-            else:
-                trade['trade_id'] = ''
-                trade['symbol'] = ''
-                trade['ordertype'] = ''
-            #trade['ordertype'] = (signal[0].split())[-3]
         elif('SL'.lower() in signal[0].lower() and 'TP'.lower() in signal[0].lower()):
             # extract the Stop
-            #trade['newstop'] = ''
+            trade['newstop'] = ''
             trade['new_sl'] = float(((signal[0].split())[1]))
             trade['new_tp'] = float(((signal[0].split())[3]))
             if len(signal[0].split()) == 6:
@@ -115,6 +94,29 @@ def ParseSignal(signal: str) -> dict:
                     trade['trade_id'] = ''
                     trade['ordertype'] = ''
                     trade['symbol'] = (signal[0].split())[4]
+            else:
+                trade['trade_id'] = ''
+                trade['symbol'] = ''
+                trade['ordertype'] = ''
+            #trade['ordertype'] = (signal[0].split())[-3]
+        elif('SL'.lower() in signal[0].lower() or 'TP'.lower() in signal[0].lower()):
+            # extract the Stop
+            trade['newstop'] = float(((signal[0].split())[1]))
+            trade['new_sl'] = ''
+            trade['new_tp'] = ''
+            if len(signal[0].split()) == 5:
+                trade['trade_id'] = ''
+                trade['ordertype'] = (signal[0].split())[3]
+                trade['symbol'] = (signal[0].split())[4]
+            elif len(signal[0].split()) == 4:
+                if (signal[0].split())[3] == 'BUY' or (signal[0].split())[3] == 'SELL':
+                    trade['trade_id'] = ''
+                    trade['ordertype'] = (signal[0].split())[3]
+                    trade['symbol'] = ''
+                else:
+                    trade['trade_id'] = ''
+                    trade['ordertype'] = ''
+                    trade['symbol'] = (signal[0].split())[3]
             else:
                 trade['trade_id'] = ''
                 trade['symbol'] = ''
@@ -1401,14 +1403,14 @@ def handle_message(update, context):
 
         r"\bSL\b": EditStopTrade, # message handler to edit SL
         r"\bTP\b": EditStopTrade, # message handler to edit TP
-
-        r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
-        r"\bBES\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
         
-        r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
-        r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
-        r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
+        r"\bBES\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
+        r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
+        
         r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
+        r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
+        r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
+        r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
 
     }
 
