@@ -74,11 +74,34 @@ def ParseSignal(signal: str) -> dict:
 
     if len(signal) == 1:
         if('METTRE LE'.lower() in signal[0].lower()):
-            # extract the StopLoss
+            # extract the Stop
             trade['newstop'] = float(((signal[0].split())[4]) + ((signal[0].split())[5]))
-        elif('SL A'.lower() in signal[0].lower() or 'TP A'.lower() in signal[0].lower()):
-            # extract the StopLoss
-            trade['newstop'] = float(((signal[0].split())[2]))
+        elif('SL'.lower() in signal[0].lower() or 'TP'.lower() in signal[0].lower()):
+            # extract the Stop
+            trade['newstop'] = float(((signal[0].split())[1]))
+            if len(signal[0].split()) == 5:
+                trade['trade_id'] = ''
+                trade['ordertype'] = (signal[0].split())[3]
+                trade['symbol'] = (signal[0].split())[4]
+            elif len(signal[0].split()) == 4:
+                if (signal[0].split())[3] == 'BUY' or (signal[0].split())[3] == 'SELL':
+                    trade['trade_id'] = ''
+                    trade['ordertype'] = (signal[0].split())[3]
+                    trade['symbol'] = ''
+                else:
+                    trade['trade_id'] = ''
+                    trade['ordertype'] = ''
+                    trade['symbol'] = (signal[0].split())[3]
+            else:
+                trade['trade_id'] = ''
+                trade['symbol'] = ''
+                trade['ordertype'] = ''
+            #trade['ordertype'] = (signal[0].split())[-3]
+        elif('SL'.lower() in signal[0].lower() and 'TP'.lower() in signal[0].lower()):
+            # extract the Stop
+            #trade['newstop'] = ''
+            trade['new_sl'] = float(((signal[0].split())[1]))
+            trade['new_tp'] = float(((signal[0].split())[3]))
             if len(signal[0].split()) == 6:
                 trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[4]
@@ -97,7 +120,7 @@ def ParseSignal(signal: str) -> dict:
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
             #trade['ordertype'] = (signal[0].split())[-3]
-        elif('CLOTURE' in signal[0] or 'BREAKEVEN' in signal[0]):
+        elif('CLORES' in signal[0] or 'BES' in signal[0]):
             if len(signal[0].split()) == 3:
                 trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[1]
@@ -115,8 +138,8 @@ def ParseSignal(signal: str) -> dict:
                 trade['trade_id'] = ''
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
-        elif('PARTIAL' in signal[0]):
-            trade['partial'] = float(((signal[0].split())[1]))
+        elif('PARTIELS' in signal[0]):
+            trade['pourcentage'] = float(((signal[0].split())[1]))
             if len(signal[0].split()) == 4:
                 trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[2]
@@ -134,9 +157,9 @@ def ParseSignal(signal: str) -> dict:
                 trade['trade_id'] = ''
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
-        elif('CLORE' in signal[0] or 'BE' in signal[0] or 'PARTIEL' in signal[0]):
+        elif('BE' in signal[0] or 'CLORE' in signal[0] or 'PARTIEL' in signal[0]):
             if (signal[0].split())[0] == 'PARTIEL':
-                trade['partial'] = float(((signal[0].split())[1]))
+                trade['pourcentage'] = float(((signal[0].split())[1]))
             trade['trade_id'] = (signal[0].split())[-1]
             #trade['symbol'] = ''
 
@@ -482,7 +505,7 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
             # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
-                positions = await connection.terminal_state.positions
+                positions = connection.terminal_state.positions
                 # On boucle dans les resultats "positions"
                 for position in positions:
                     # On verifie certaines conditions
@@ -490,10 +513,10 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
                         or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                        if 'partial' in trade and trade['partial'] is not None:
+                        if 'pourcentage' in trade and trade['pourcentage'] is not None:
                             # Fermer la position partiellement
-                            partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
-                            result = await connection.close_position_partially(position['id'], partial_volume)
+                            pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
+                            result = await connection.close_position_partially(position['id'], pourcentage_volume)
                             update.effective_message.reply_text(f"Position {position['id']} > {trade['ordertype']} {position['symbol']} fermée partiellement avec succes.")
                             logger.info(result)
                         else:
@@ -514,11 +537,11 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
                 
                 # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
-                    if 'partial' in trade and trade['partial'] is not None:
+                    if 'pourcentage' in trade and trade['pourcentage'] is not None:
                         position = await connection.get_position(position_id)
                         # Fermer la position partiellement
-                        partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
-                        result = await connection.close_position_partially(position_id, partial_volume)
+                        pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
+                        result = await connection.close_position_partially(position_id, pourcentage_volume)
                         update.effective_message.reply_text(f"Position {position_id} fermée partiellement avec succes.")
                         logger.info(result)
                     else:
@@ -529,14 +552,14 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
 
         else:
             # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
-            if 'partial' in trade and trade['partial'] is not None:
+            if 'pourcentage' in trade and trade['pourcentage'] is not None:
                 position = await connection.get_position(trade_id)
                 # Si la position existe ou est en cour d'exécution 
                 if position is not None:
-                    # Récupération du volume de la position et calcul du pourcentage a fermer
-                    partial_volume = round(float(trade['partial']) / 100 * position['volume'], 2)
+                    # Récupération du volume de la position et calcul du pourcentage du volume à fermer
+                    pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
                     # Fermer la position partiellement
-                    result = await connection.close_position_partially(trade_id, partial_volume)
+                    result = await connection.close_position_partially(trade_id, pourcentage_volume)
                     update.effective_message.reply_text(f"Position {trade_id} fermée partiellement avec succes.")
                     logger.info(result)
             else:            
@@ -619,7 +642,8 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                 await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                 update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
             else:
-                positions = await connection.terminal_state.positions
+                positions = connection.terminal_state.positions
+                logger.info(positions)
                 # On vérifie si le symbol est spécifié
                 for position in positions:
                     if (not trade['symbol'] and not trade['ordertype']) \
@@ -627,19 +651,23 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         
-                        if('SL' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                        if('BE' in update.effective_message.text):
+                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
+                            await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                            update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
+                        elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
+                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
+                            await connection.modify_position(position['id'], stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
+                            update.effective_message.reply_text(f"SL: {trade['new_sl']} & TP: {trade['new_tp']} définis pour la position {position['id']}.")
+                        elif('SL' in update.effective_message.text):
+                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
                             await connection.modify_position(position['id'], stop_loss=trade['newstop'], take_profit=position['takeProfit'])
                             update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position['id']}.")
                         elif('TP' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                            # Mettre à jour le take-profit pour qu'il soit égal au niveau voulu
                             await connection.modify_position(position['id'], stop_loss=position['stopLoss'], take_profit=trade['newstop'])
                             update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position['id']}.")
-                        else:
-                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                            await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
-                                    
+                                   
                 # else:
                 #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                 #     update.effective_message.reply_text(f"BreakEven défini pour toutes les positions.")
@@ -654,9 +682,13 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                     #takeprofit = position['takeProfit']
                     #stoploss = position['stopLoss']
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    if('BREAKEVEN' in update.effective_message.text):
+                    if('BES' in update.effective_message.text):
                         await connection.modify_position(position_id, stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                         update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
+                    elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
+                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
+                        await connection.modify_position(position_id, stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
+                        update.effective_message.reply_text(f"SL: {trade['new_sl']} & TP: {trade['new_tp']} définis pour la position {position_id}.")
                     elif('SL' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
                         await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit'])
@@ -712,7 +744,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # obtains account information from MetaTrader server
-        account_information = await connection.terminal_state.account_information
+        account_information = connection.terminal_state.account_information
 
         # calculates the stop loss in pips
         if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
@@ -754,7 +786,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
         # checks if the order is a market execution to get the current price of symbol
         #if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
-        price = await connection.terminal_state.price(symbol=trade['Symbol'])
+        price = connection.terminal_state.price(symbol=trade['Symbol'])
 
         # uses bid price if the order type is a buy
         if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
@@ -869,7 +901,7 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # Fetch open positions
-        positions = await connection.terminal_state.positions
+        positions = connection.terminal_state.positions
 
         if not positions:
             update.effective_message.reply_text("No ongoing trades at the moment.")
@@ -1355,29 +1387,28 @@ def handle_message(update, context):
     # Liste des expressions régulières et fonctions associées
     regex_functions = {
         r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
-        r"\bRISK\b": PlaceTrade, # message handler for entering trade
-        r"\b💲TP:\b": PlaceTrade, # message handler for entering trade
-        r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
-        r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
-        r"\bSL@\b": PlaceTrade, # message handler for entering trade
-        r"\bSL @\b": PlaceTrade, # message handler for entering trade
-
         r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
-        r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one
-        #r"\bSECURE PARTIALS\b": TakeProfitTrade, # message handler for Take Profit
-        
+        r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
         r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
 
-        r"\bSL A\b": EditStopTrade, # message handler to edit SL
-        r"\bTP A\b": EditStopTrade, # message handler to edit TP
+        r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+
+        # r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+        # r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
+        # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+        # r"\bSL@\b": PlaceTrade, # message handler for entering trade
+        # r"\bSL @\b": PlaceTrade, # message handler for entering trade
+
+        r"\bSL\b": EditStopTrade, # message handler to edit SL
+        r"\bTP\b": EditStopTrade, # message handler to edit TP
 
         r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
-        r"\bBREAKEVEN\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL
+        r"\bBES\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
         
-        r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
-        r"\bCLOTURE\b": CloseAllTrade, # message handler to CLOSE Position By ORDERTYPE OR SYMBOL
-        r"\bPARTIAL\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
-        r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE ORDER By ID
+        r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
+        r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
+        r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
+        r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
 
     }
 
