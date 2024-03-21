@@ -439,7 +439,7 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
 
 
 
-async def ConnectCloseTrade(update: Update, context, trade: dict, trade_id, signalInfos_converted) -> None:
+async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dict, trade_id, signalInfos_converted) -> None:
     """Close ongoing trades.
 
     Arguments:
@@ -570,7 +570,7 @@ async def ConnectCloseTrade(update: Update, context, trade: dict, trade_id, sign
         update.effective_message.reply_text(f"Failed to close trades. Error: {error}")
 
 
-async def ConnectEditTrade(update: Update, context, trade: dict, signalInfos_converted):
+async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict, signalInfos_converted):
     """Edit Stop ongoing trades.
 
     Arguments:
@@ -672,7 +672,7 @@ async def ConnectEditTrade(update: Update, context, trade: dict, signalInfos_con
         update.effective_message.reply_text(f"Failed to set new Stop on the trades. Error: {error}")
 
 
-async def ConnectPlaceTrade(update: Update, context, trade: dict, enterTrade: bool):
+async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dict, enterTrade: bool):
     """Attempts connection to MetaAPI and MetaTrader to place trade.
 
     Arguments:
