@@ -482,7 +482,7 @@ async def ConnectCloseTrade(update: Update, context, trade: dict, trade_id, sign
             # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
-                positions = await connection.terminalState.positions
+                positions = await connection.terminal_state.positions
                 # On boucle dans les resultats "positions"
                 for position in positions:
                     # On verifie certaines conditions
@@ -619,7 +619,7 @@ async def ConnectEditTrade(update: Update, context, trade: dict, signalInfos_con
                 await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                 update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
             else:
-                positions = await connection.terminalState.positions
+                positions = await connection.terminal_state.positions
                 # On vérifie si le symbol est spécifié
                 for position in positions:
                     if (not trade['symbol'] and not trade['ordertype']) \
@@ -869,7 +869,7 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # Fetch open positions
-        positions = await connection.terminalState.positions
+        positions = await connection.terminal_state.positions
 
         if not positions:
             update.effective_message.reply_text("No ongoing trades at the moment.")
