@@ -508,7 +508,7 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
                 #positions = connection.terminal_state.positions
-                positions = connection.get_positions()
+                positions = await connection.get_positions()
                 # On boucle dans les resultats "positions"
                 for position in positions:
                     # On verifie certaines conditions
@@ -646,7 +646,7 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                 update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
             else:
                 #positions = connection.terminal_state.positions
-                positions = connection.get_positions()
+                positions = await connection.get_positions()
                 #logger.info(positions)
                 # On vérifie si le symbol est spécifié
                 for position in positions:
