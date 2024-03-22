@@ -387,16 +387,15 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
 
     else:
         if currency == 'XOF':
-            if(balance <= 301571):
-                trade['PositionSize'] = 0.01
-            else:
-                # Conversion de XOF en USD
-                amount_usd = xof_to_usd(balance)
-                balance = amount_usd
+            #if(balance <= 30228):
+            #    trade['PositionSize'] = 0.01
+            #else:
+            # Conversion de XOF en USD
+            amount_usd = xof_to_usd(balance)
+            balance = amount_usd
 
-        else:
-            # calculates the position size using stop loss and RISK FACTOR
-            trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
+        # calculates the position size using stop loss and RISK FACTOR
+        trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
 
     # calculates the take profit(s) in pips
     for takeProfit in trade['TP']:
