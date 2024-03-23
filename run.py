@@ -654,7 +654,7 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         
-                        if('BE' in update.effective_message.text):
+                        if('BES' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
                             await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                             update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
@@ -1400,11 +1400,11 @@ def handle_message(update, context):
 
         r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
 
-        # r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
         # r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
-        # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+        r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         # r"\bSL@\b": PlaceTrade, # message handler for entering trade
-        # r"\bSL @\b": PlaceTrade, # message handler for entering trade
+        r"\bSL @\b": PlaceTrade, # message handler for entering trade
 
         r"\bSL\b": EditStopTrade, # message handler to edit SL
         r"\bTP\b": EditStopTrade, # message handler to edit TP
