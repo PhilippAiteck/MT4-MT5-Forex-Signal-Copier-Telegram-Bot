@@ -1090,7 +1090,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
 
 
         # Fermez la position de la liste
-        resultclose = asyncio.run(ConnectCloseTrade(update, trade, trade_id, signalInfos_converted))
+        resultclose = asyncio.run(ConnectCloseTrade(update, context, trade, trade_id, signalInfos_converted))
         
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -1400,11 +1400,11 @@ def handle_message(update, context):
 
         r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
 
-        r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+        # r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
         # r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
-        r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+        # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
         # r"\bSL@\b": PlaceTrade, # message handler for entering trade
-        r"\bSL @\b": PlaceTrade, # message handler for entering trade
+        # r"\bSL @\b": PlaceTrade, # message handler for entering trade
 
         r"\bSL\b": EditStopTrade, # message handler to edit SL
         r"\bTP\b": EditStopTrade, # message handler to edit TP
