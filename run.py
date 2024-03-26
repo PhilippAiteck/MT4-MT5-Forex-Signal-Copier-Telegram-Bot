@@ -656,7 +656,7 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         
                         if('BES' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
-                            await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                            await connection.modify_position(position_id=position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                             update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
                         elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
