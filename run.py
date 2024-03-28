@@ -69,7 +69,8 @@ def ParseSignal(signal: str) -> dict:
     # converts message to list of strings for parsing
     signal = signal.splitlines()
     signal = [line.rstrip() for line in signal]
-
+    #signal = re.sub(r'\s+', ' ', signale)
+    
     trade = {}
 
     if len(signal) == 1:
@@ -226,20 +227,52 @@ def ParseSignal(signal: str) -> dict:
 
         else:
             
-            if('tp' in signal[1].lower()):
+            if('TP'.lower() in signal[1].lower()):
                 trade['Symbol'] = (signal[0].split())[0]
-                trade['Entry'] = float((signal[0].split())[-1])
-                trade['TP'] = [float((signal[1].split())[-1])]
+                #trade['Entry'] = (signal[0].split())[-1]
+                trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
+                #if('@' in trade['Entry']):
+                #    trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
+                #trade['Entry'] = float((signal[0].split())[-1])
+                trade['TP'] = [float((signal[1].replace(' ','').split('@'))[-1])]
+                trade['TP'].append(float(signal[2].replace(' ','').split('@')[-1]))
+                trade['StopLoss'] = float((signal[4].replace(' ','').split('@'))[-1])
                 # checks if there's a TP2 and parses it
-                #if(len(signal) > 3):
-                if('tp' in signal[2].lower()):
-                    trade['TP'].append(float(signal[2].split()[-1]))
-                    trade['StopLoss'] = float((signal[3].split())[-1])
-                    trade['RiskFactor'] = float((signal[4].split())[-1])
+                # if(len(signal) >= 5 and 'tp'.lower() in signal[2].lower()):
+                #     trade['TP'].append(float(signal[2].split()[-1]))
+                #     trade['StopLoss'] = float((signal[4].split())[-1])
+                # else:
+                #     trade['StopLoss'] = float((signal[3].split())[-1])
+                if(len(signal) > 5 and 'RISK'.lower() in signal[5].lower()):
+                    trade['RiskFactor'] = float((signal[5].split())[-1])
                 else:
-                    trade['StopLoss'] = float((signal[2].split())[-1])
-                    trade['RiskFactor'] = float((signal[3].split())[-1])
+                    trade['RiskFactor'] = RISK_FACTOR
+ 
+            elif('SL'.lower() in signal[2].lower()):
+                if('limit'.lower() in trade['OrderType'].lower()):
+                    if('for'.lower() in signal[0].lower()):
+                        trade['Symbol'] = (signal[0].split())[3]
+                    else:
+                        trade['Symbol'] = (signal[0].split())[0]
+                else:
+                    trade['Symbol'] = (signal[0].split())[1]
 
+                if('#' in trade['Symbol'] or '@' in trade['Symbol']):
+                    trade['Symbol'] = trade['Symbol'][1:]
+                if('-' in trade['Symbol']):
+                    trade['Symbol'] = trade['Symbol'].replace('-','')
+                #if('@' in trade['Entry']):
+                #    trade['Symbol'] = (signal[0].split())[1][1:]
+                trade['Entry'] = (signal[0].split())[-1]
+                if(trade['Entry'] != 'NOW'.lower()):
+                    trade['Entry'] = float((signal[0].split())[-1].replace('@',''))
+                trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
+                trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
+                # checks if there's a TP2 and parses it
+                if (len(signal) >= 5 and 'Tp'.lower() in signal[4].lower()):
+                    trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
+                
+                trade['RiskFactor'] = RISK_FACTOR
 
             elif('🔽' in signal[0] or '🔼' in signal[0]):
                 trade['Symbol'] = (signal[0].split())[0][1:]
@@ -265,36 +298,14 @@ def ParseSignal(signal: str) -> dict:
                 trade['RiskFactor'] = RISK_FACTOR
 
 
-            #elif('@'.lower() in signal[2].lower()):
-                # if len(signal) >= 4:
-                #     trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
-                #     trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
-                #     if len(signal) >= 5 and 'tp' in signal[4].lower():
-                #         trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
+            # elif('@'.lower() in signal[2].lower()):
+            #     if len(signal) >= 4:
+            #         trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
+            #         trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
+            #         if len(signal) >= 5 and 'tp' in signal[4].lower():
+            #             trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
                 
-                # trade['RiskFactor'] = RISK_FACTOR
-
-            elif('@'.lower() in signal[2].lower()):
-                if('limit'.lower() in trade['OrderType'].lower()):
-                    if('for'.lower() in signal[0].lower()):
-                        trade['Symbol'] = (signal[0].split())[3]
-                    else:
-                        trade['Symbol'] = (signal[0].split())[0]
-                        #trade['Entry'] = float((signal[0].split())[-1])
-                else:
-                    trade['Symbol'] = (signal[0].split())[0]
-                if('#' in trade['Symbol']):
-                    trade['Symbol'] = (signal[0].split())[0][1:]
-                if('@' in (signal[0].split())[-1]):
-                    (signal[0].split())[-1].replace('@','')
-                
-                trade['Entry'] = float((signal[0].split())[-1])
-                trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
-                trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
-                if('tp' in signal[4].lower()):
-                    trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
-                
-                trade['RiskFactor'] = RISK_FACTOR
+            #     trade['RiskFactor'] = RISK_FACTOR
 
 
 
@@ -656,7 +667,7 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         
                         if('BES' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
-                            await connection.modify_position(position_id=position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                            await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                             update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
                         elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
@@ -955,16 +966,23 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     
     # checks if the trade has already been parsed or not
     #if(context.user_data['trade'] == None):
-    try: 
+    try:
+        if update.effective_message.caption is not None:
+            text_received = update.effective_message.caption.replace('  ', ' ')
+        else:
+            text_received = update.effective_message.text.replace('  ', ' ')
+        #chat_title = update.message.forward_from_chat.title
+              
         # parses signal from Telegram message
-        trade = ParseSignal(update.effective_message.text)
+        trade = ParseSignal(text_received)
         
         # checks if there was an issue with parsing the trade
         if(not(trade)):
             raise Exception('Invalid Trade')
+        
+        # sets the user context trade equal to the parsed trade and extract signal 
+        context.chat_data['trade'] = trade
 
-        # sets the user context trade equal to the parsed trade and extract messageID 
-        context.user_data['trade'] = trade
         update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
         update.effective_message.reply_text(trade)
 
@@ -994,7 +1012,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     write_data_to_json(signalInfos)
     
     # removes trade from user context data
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
 
     return ConversationHandler.END
 
@@ -1107,7 +1125,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     
 
     # removes trade from user context data
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
 
     return ConversationHandler.END
 
@@ -1152,7 +1170,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
             raise Exception('Invalid Trade')
 
         # sets the user context trade equal to the parsed trade and extract messageID 
-        context.user_data['trade'] = trade
+        context.chat_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
         update.effective_message.reply_text(trade)
 
@@ -1178,7 +1196,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
     resultedit = asyncio.run(ConnectEditTrade(update, context, trade, signalInfos_converted))
  
     # removes trade from user context data
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
 
     return ConversationHandler.END
 
@@ -1215,7 +1233,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
             raise Exception('Invalid close signal')
         
         # sets the user context trade equal to the parsed trade and extract messageID 
-        context.user_data['trade'] = trade
+        context.chat_data['trade'] = trade
 
         # checks if trade['trade_id'] exist
         if trade['trade_id']: 
@@ -1224,7 +1242,6 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
         
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
         logger.info(trade)
-
 
     
     except Exception as error:
@@ -1240,7 +1257,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     resultclose = asyncio.run(ConnectCloseTrade(update, context, trade, trade_id, signalInfos_converted))
  
     # removes trade from user context data
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
 
     return ConversationHandler.END
 
@@ -1387,37 +1404,57 @@ def xof_to_usd(amount_xof):
     return amount_usd
 
 # Fonction pour gérer les messages
-def handle_message(update, context):
-    text_received = update.message.text
+def handle_message(update: Update, context: CallbackContext):
+    if update.effective_message.caption is not None:
+        text_received = update.effective_message.caption
+    else:
+        text_received = update.effective_message.text
     #chat_title = update.message.forward_from_chat.title
+    logger.info(text_received)
+
+    # converts message to list of strings for parsing
+    signal = text_received.splitlines()
+    #logger.info(len(signal))
 
     # Liste des expressions régulières et fonctions associées
-    regex_functions = {
-        r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
-        r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
-        r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
-        r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
+    if (len(signal) == 1):
+        regex_functions = {
+                r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
+                r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
 
-        r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+                r"\bSL\b": EditStopTrade, # message handler to edit SL
+                r"\bTP\b": EditStopTrade, # message handler to edit TP
+                
+                r"\bBES\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
+                r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
+                
+                r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
+                r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
+                r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
+                r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
 
-        # r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
-        # r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
-        # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
-        # r"\bSL@\b": PlaceTrade, # message handler for entering trade
-        # r"\bSL @\b": PlaceTrade, # message handler for entering trade
+        }
+    else:
+        regex_functions = {
+                r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
+                r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
 
-        r"\bSL\b": EditStopTrade, # message handler to edit SL
-        r"\bTP\b": EditStopTrade, # message handler to edit TP
-        
-        r"\bBES\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
-        r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
-        
-        r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
-        r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
-        r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
-        r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
+                r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
 
-    }
+                #r"\btp\b": PlaceTrade, # message handler for entering trade
+                r"\bSl\b": PlaceTrade, # message handler for entering trade
+                r"\bSL\b": PlaceTrade, # message handler for entering trade
+                #r"\btp2\b": PlaceTrade, # message handler for entering trade
+                #r"\btp 2\b": PlaceTrade, # message handler for entering trade
+                #r"\bTp2\b": PlaceTrade, # message handler for entering trade
+                #r"\bTp 2\b": PlaceTrade, # message handler for entering trade
+                #r"\bSL@\b": PlaceTrade, # message handler for entering trade
+                #r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+                #r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
+                # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+
+        }
+
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
             # Liste des expressions régulières et fonctions associées
@@ -1466,6 +1503,42 @@ def write_data_to_json(data):
             send_periodic_message(update)
         asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
  """
+
+# Initialise MetaApi
+async def init_meta_api():
+    meta_api = MetaApi(API_KEY)
+    account = await meta_api.metatrader_account_api.get_account(ACCOUNT_ID)
+    await account.wait_connected()
+    return account.get_streaming_connection()
+
+
+#async def main():
+    streaming_connection = await init_meta_api()
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    async def handle_new_position(event):
+        position = event['position']
+        # Gérer la nouvelle position reçue
+        print('Nouvelle position:', position)
+
+    # Ajouter des gestionnaires d'événements pour les différents événements de streaming
+    streaming_connection.subscribe_positions('position', handle_new_position)
+
+    # Lancer l'écoute des événements de streaming
+    await streaming_connection.wait_ready()
+
+    # Fonction de démarrage de votre bot
+    async def start(update, context):
+        await update.message.reply_text('Bot démarré avec succès!')
+
+    dp.add_handler(CommandHandler("start", start))
+
+    # Lancer le bot
+    await updater.start_polling()
+
+    # Maintenir le bot actif
+    await updater.idle()
 
 def main() -> None:
 # async def main() -> None:
@@ -1541,7 +1614,7 @@ def main() -> None:
     #dp.add_handler(CommandHandler("periodichandler", periodic_handler))
 
     # message handler for all messages that are not included in conversation handler
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command | Filters.chat_type.channel & ~Filters.command, handle_message))
 
     #dp.add_handler(MessageHandler(Filters.text & ~Filters.command, periodic_handler))
 
@@ -1558,4 +1631,6 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+
+    # Exécuter la boucle principale
     #asyncio.run(main())
