@@ -230,10 +230,11 @@ def ParseSignal(signal: str) -> dict:
             if('TP'.lower() in signal[1].lower()):
                 trade['Symbol'] = (signal[0].split())[0]
                 #trade['Entry'] = (signal[0].split())[-1]
-                trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
-                #if('@' in trade['Entry']):
-                #    trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
-                #trade['Entry'] = float((signal[0].split())[-1])
+                #trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
+                if('@' in (signal[0].split())[-1]):
+                    trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
+                else:
+                    trade['Entry'] = float((signal[0].split())[-1])
                 trade['TP'] = [float((signal[1].replace(' ','').split('@'))[-1])]
                 trade['TP'].append(float(signal[2].replace(' ','').split('@')[-1]))
                 trade['StopLoss'] = float((signal[4].replace(' ','').split('@'))[-1])
@@ -965,7 +966,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
     """
     
     # checks if the trade has already been parsed or not
-    #if(context.user_data['trade'] == None):
+    #if(context.chat_data['trade'] == None):
     try:
         if update.effective_message.caption is not None:
             text_received = update.effective_message.caption.replace('  ', ' ')
@@ -984,11 +985,11 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         context.chat_data['trade'] = trade
 
         update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-        update.effective_message.reply_text(trade)
+        logger.info(trade)
 
     except Exception as error:
         logger.error(f'Error: {error}')
-        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL \nTP \nSL \n\nOr use the /cancel to command to cancel this action."
+        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\n\nOr use the /cancel to command to cancel this action."
         update.effective_message.reply_text(errorMessage)
 
         # returns to TRADE state to reattempt trade parsing
@@ -1001,7 +1002,7 @@ def PlaceTrade(update: Update, context: CallbackContext) -> int:
         signalInfos[update.effective_message.message_id] = []
 
     # attempts connection to MetaTrader and places trade
-    tradeid = asyncio.run(ConnectPlaceTrade(update, context, context.user_data['trade'], True))
+    tradeid = asyncio.run(ConnectPlaceTrade(update, context, context.chat_data['trade'], True))
     #tradeid = ["409804691", "409804692", "409804693"]
 
     # adding tradeid values in signalInfos
@@ -1025,30 +1026,30 @@ def CalculateTrade(update: Update, context: CallbackContext) -> int:
     """
 
     # checks if the trade has already been parsed or not
-    if(context.user_data['trade'] == None):
+    #if(context.chat_data['trade'] == None):
 
-        try: 
-            # parses signal from Telegram message
-            trade = ParseSignal(update.effective_message.text)
-            
-            # checks if there was an issue with parsing the trade
-            if(not(trade)):
-                raise Exception('Invalid Trade')
-
-            # sets the user context trade equal to the parsed trade
-            context.user_data['trade'] = trade
-            update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... (May take a while) ⏰")
+    try: 
+        # parses signal from Telegram message
+        trade = ParseSignal(update.effective_message.text)
         
-        except Exception as error:
-            logger.error(f'Error: {error}')
-            errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL \nTP \nSL \n\nOr use the /cancel to command to cancel this action."
-            update.effective_message.reply_text(errorMessage)
+        # checks if there was an issue with parsing the trade
+        if(not(trade)):
+            raise Exception('Invalid Trade')
 
-            # returns to CALCULATE to reattempt trade parsing
-            return CALCULATE
+        # sets the user context trade equal to the parsed trade
+        context.chat_data['trade'] = trade
+        update.effective_message.reply_text("Trade Successfully Parsed! 🥳\nConnecting to MetaTrader ... (May take a while) ⏰")
+    
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        errorMessage = f"There was an error parsing this trade 😕\n\nError: {error}\n\nPlease re-enter trade with this format:\n\nBUY/SELL SYMBOL \nTP \nSL \n\nOr use the /cancel to command to cancel this action."
+        update.effective_message.reply_text(errorMessage)
+
+        # returns to CALCULATE to reattempt trade parsing
+        return CALCULATE
     
     # attempts connection to MetaTrader and calculates trade information
-    asyncio.run(ConnectPlaceTrade(update, context.user_data['trade'], False))
+    asyncio.run(ConnectPlaceTrade(update, context.chat_data['trade'], False))
 
     # asks if user if they would like to enter or decline trade
     update.effective_message.reply_text("Would you like to enter this trade?\nTo enter, select: /yes\nTo decline, select: /no")
@@ -1080,7 +1081,7 @@ def TakeProfitTrade(update: Update, context: CallbackContext) -> int:
     """
 
     # checks if the trade has already been parsed or not
-    #if(context.user_data['trade'] == None):
+    #if(context.chat_data['trade'] == None):
 
     messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
@@ -1139,7 +1140,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
     """
 
     # checks if the trade has already been parsed or not
-    #if(context.user_data['trade'] == None):
+    #if(context.chat_data['trade'] == None):
 
     #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
@@ -1172,7 +1173,7 @@ def EditStopTrade(update: Update, context: CallbackContext) -> int:
         # sets the user context trade equal to the parsed trade and extract messageID 
         context.chat_data['trade'] = trade
         update.effective_message.reply_text("Signal Successfully Parsed! 🥳\nConnecting to MetaTrader ... \n(May take a while) ⏰")
-        update.effective_message.reply_text(trade)
+        logger.info(trade)
 
         # checks if there was an issue with parsing the trade
         #if(not(signalInfos)):
@@ -1210,7 +1211,7 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     """
 
     # checks if the trade has already been parsed or not
-    #if(context.user_data['trade'] == None):
+    #if(context.chat_data['trade'] == None):
 
     #messageid = update.effective_message.reply_to_message.message_id
     signalInfos = read_data_from_json()
@@ -1311,7 +1312,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
     update.effective_message.reply_text("Command has been canceled.")
 
     # removes trade from user context data
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
 
     return ConversationHandler.END
 
@@ -1339,7 +1340,7 @@ def Trade_Command(update: Update, context: CallbackContext) -> int:
         return ConversationHandler.END
     
     # initializes the user's trade as empty prior to input and parsing
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
     
     # asks user to enter the trade
     update.effective_message.reply_text("Please enter the trade that you would like to place.")
@@ -1358,7 +1359,7 @@ def Calculation_Command(update: Update, context: CallbackContext) -> int:
         return ConversationHandler.END
 
     # initializes the user's trade as empty prior to input and parsing
-    context.user_data['trade'] = None
+    context.chat_data['trade'] = None
 
     # asks user to enter the trade
     update.effective_message.reply_text("Please enter the trade that you would like to calculate.")
