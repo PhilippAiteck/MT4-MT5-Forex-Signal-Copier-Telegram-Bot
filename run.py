@@ -666,8 +666,8 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         
+                        update.effective_message.reply_text(f"BreakEven demandé pour {position['id']} ")
                         if('BES' in update.effective_message.text):
-                            update.effective_message.reply_text(f"BreakEven demandé pour {position['id']} ")
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
                             await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                             update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
@@ -771,7 +771,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
             multiplier = 0.001
 
         elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
-            multiplier = 1
+            multiplier = 0.5
 
         elif(str(trade['Entry']).index('.') >= 2):
             multiplier = 0.01
@@ -1412,7 +1412,7 @@ def handle_message(update: Update, context: CallbackContext):
     else:
         text_received = update.effective_message.text
     #chat_title = update.message.forward_from_chat.title
-    logger.info(text_received)
+    #logger.info(text_received)
 
     # converts message to list of strings for parsing
     signal = text_received.splitlines()
