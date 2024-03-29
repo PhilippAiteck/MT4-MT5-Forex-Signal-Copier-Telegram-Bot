@@ -658,7 +658,8 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
             else:
                 #positions = connection.terminal_state.positions
                 positions = await connection.get_positions()
-                #logger.info(positions)
+                logger.info("LA LISTE DES POSITIONS")
+                logger.info(positions)
                 # On vérifie si le symbol est spécifié
                 for position in positions:
                     if (not trade['symbol'] and not trade['ordertype']) \
@@ -666,7 +667,6 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         
-                        update.effective_message.reply_text(f"BreakEven demandé pour {position['id']} ")
                         if('BES' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
                             await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
