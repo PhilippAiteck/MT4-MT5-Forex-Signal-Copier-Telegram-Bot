@@ -123,7 +123,7 @@ def ParseSignal(signal: str) -> dict:
                 trade['symbol'] = ''
                 trade['ordertype'] = ''
             #trade['ordertype'] = (signal[0].split())[-3]
-        elif('CLORES' in signal[0] or 'BES' in signal[0]):
+        elif('CLORES' in signal[0] or 'BRV' in signal[0]):
             if len(signal[0].split()) == 3:
                 trade['trade_id'] = ''
                 trade['ordertype'] = (signal[0].split())[1]
@@ -658,8 +658,7 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
             else:
                 #positions = connection.terminal_state.positions
                 positions = await connection.get_positions()
-                logger.info("LA LISTE DES POSITIONS")
-                logger.info(positions)
+                #logger.info(positions)
                 # On vérifie si le symbol est spécifié
                 for position in positions:
                     if (not trade['symbol'] and not trade['ordertype']) \
@@ -667,22 +666,22 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
                         
-                        if('BES' in update.effective_message.text):
+                        if('BRV' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
                             await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                             update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
                         elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
                             await connection.modify_position(position['id'], stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
-                            update.effective_message.reply_text(f"SL: {trade['new_sl']} & TP: {trade['new_tp']} définis pour la position {position['id']}.")
+                            update.effective_message.reply_text(f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour la position {position['id']}.")
                         elif('SL' in update.effective_message.text):
                             # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
                             await connection.modify_position(position['id'], stop_loss=trade['newstop'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position['id']}.")
+                            update.effective_message.reply_text(f"StopLoss: {trade['newstop']} défini pour la position {position['id']}.")
                         elif('TP' in update.effective_message.text):
                             # Mettre à jour le take-profit pour qu'il soit égal au niveau voulu
                             await connection.modify_position(position['id'], stop_loss=position['stopLoss'], take_profit=trade['newstop'])
-                            update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position['id']}.")
+                            update.effective_message.reply_text(f"TakeProfit: {trade['newstop']} défini pour la position {position['id']}.")
                                    
                 # else:
                 #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
@@ -698,21 +697,21 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
                     #takeprofit = position['takeProfit']
                     #stoploss = position['stopLoss']
                     # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    if('BES' in update.effective_message.text):
+                    if('BRV' in update.effective_message.text):
                         await connection.modify_position(position_id, stop_loss=position['openPrice'], take_profit=position['takeProfit'])
                         update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
                     elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
                         await connection.modify_position(position_id, stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
-                        update.effective_message.reply_text(f"SL: {trade['new_sl']} & TP: {trade['new_tp']} définis pour la position {position_id}.")
+                        update.effective_message.reply_text(f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour la position {position_id}.")
                     elif('SL' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
                         await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit'])
-                        update.effective_message.reply_text(f"SL: {trade['newstop']} défini pour la position {position_id}.")
+                        update.effective_message.reply_text(f"StopLoss: {trade['newstop']} défini pour la position {position_id}.")
                     elif('TP' in update.effective_message.text):
                         # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
                         await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
-                        update.effective_message.reply_text(f"TP: {trade['newstop']} défini pour la position {position_id}.")
+                        update.effective_message.reply_text(f"TakeProfit: {trade['newstop']} défini pour la position {position_id}.")
         
 
     except Exception as error:
@@ -1427,7 +1426,7 @@ def handle_message(update: Update, context: CallbackContext):
                 r"\bSL\b": EditStopTrade, # message handler to edit SL
                 r"\bTP\b": EditStopTrade, # message handler to edit TP
                 
-                r"\bBES\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
+                r"\bBRV\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
                 r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
                 
                 r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
