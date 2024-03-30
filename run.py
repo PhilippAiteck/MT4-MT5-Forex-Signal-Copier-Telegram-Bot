@@ -791,7 +791,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         if account_information['broker'] == 'EightCap Global Ltd':
             # Calculer la vrai balance du challenge
             balance = (account_information['balance'] * 5) / 100
-            if(multiplier == 1):
+            if(multiplier == 0.5):
                 trade['Symbol'] = trade['Symbol']+".b"
             elif(trade['Symbol'] in FOREX):
                 trade['Symbol'] = trade['Symbol']+".i"
