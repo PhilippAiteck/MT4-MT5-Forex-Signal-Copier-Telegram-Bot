@@ -227,7 +227,23 @@ def ParseSignal(signal: str) -> dict:
 
         else:
             
-            if('TP'.lower() in signal[1].lower()):
+            if('🔽' in signal[0] or '🔼' in signal[0]):
+                trade['Symbol'] = (signal[0].split())[0][1:]
+                trade['Entry'] = float((signal[0].split())[-1])
+                trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
+                # checks if there's a TP2 and parses it
+                if('tp' in signal[3].lower()):
+                    trade['TP'].append(float(signal[3].replace(' ','').split(':')[-1]))
+                    trade['StopLoss'] = float((signal[5].replace(' ','').split(':'))[-1])
+                else:
+                    trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
+                
+                if(len(signal) > 6 and 'RISK'.lower() in signal[6].lower()):
+                    trade['RiskFactor'] = float((signal[6].split())[-1])
+                else:
+                    trade['RiskFactor'] = RISK_FACTOR
+
+            elif('TP'.lower() in signal[1].lower() or 'TP'.lower() in signal[2].lower()):
                 trade['Symbol'] = (signal[0].split())[0]
                 #trade['Entry'] = (signal[0].split())[-1]
                 #trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
@@ -235,19 +251,29 @@ def ParseSignal(signal: str) -> dict:
                     trade['Entry'] = float(signal[0].replace(' ','').split('@')[-1])
                 else:
                     trade['Entry'] = float((signal[0].split())[-1])
-                trade['TP'] = [float((signal[1].replace(' ','').split('@'))[-1])]
-                trade['TP'].append(float(signal[2].replace(' ','').split('@')[-1]))
-                trade['StopLoss'] = float((signal[4].replace(' ','').split('@'))[-1])
-                # checks if there's a TP2 and parses it
-                # if(len(signal) >= 5 and 'tp'.lower() in signal[2].lower()):
-                #     trade['TP'].append(float(signal[2].split()[-1]))
-                #     trade['StopLoss'] = float((signal[4].split())[-1])
-                # else:
-                #     trade['StopLoss'] = float((signal[3].split())[-1])
-                if(len(signal) > 5 and 'RISK'.lower() in signal[5].lower()):
-                    trade['RiskFactor'] = float((signal[5].split())[-1])
+                if ('LIMIT'.lower() in signal[1].lower()):
+                    trade['TP'] = [float((signal[2].replace(' ','').split('@'))[-1])]
+                    trade['TP'].append(float(signal[3].replace(' ','').split('@')[-1]))
+                    trade['StopLoss'] = float((signal[5].replace(' ','').split('@'))[-1])
+                    if(len(signal) > 6 and 'RISK'.lower() in signal[6].lower()):
+                        trade['RiskFactor'] = float((signal[6].split())[-1])
+                    else:
+                        trade['RiskFactor'] = RISK_FACTOR
                 else:
-                    trade['RiskFactor'] = RISK_FACTOR
+                    trade['TP'] = [float((signal[1].replace(' ','').split('@'))[-1])]
+                    trade['TP'].append(float(signal[2].replace(' ','').split('@')[-1]))
+                    trade['StopLoss'] = float((signal[4].replace(' ','').split('@'))[-1])
+                    # checks if there's a TP2 and parses it
+                    # if(len(signal) >= 5 and 'tp'.lower() in signal[2].lower()):
+                    #     trade['TP'].append(float(signal[2].split()[-1]))
+                    #     trade['StopLoss'] = float((signal[4].split())[-1])
+                    # else:
+                    #     trade['StopLoss'] = float((signal[3].split())[-1])
+                    if(len(signal) > 5 and 'RISK'.lower() in signal[5].lower()):
+                        trade['RiskFactor'] = float((signal[5].split())[-1])
+                    else:
+                        trade['RiskFactor'] = RISK_FACTOR
+
  
             elif('SL'.lower() in signal[2].lower()):
                 if('limit'.lower() in trade['OrderType'].lower()):
@@ -265,7 +291,7 @@ def ParseSignal(signal: str) -> dict:
                 #if('@' in trade['Entry']):
                 #    trade['Symbol'] = (signal[0].split())[1][1:]
                 trade['Entry'] = (signal[0].split())[-1]
-                if(trade['Entry'] != 'NOW'.lower()):
+                if(trade['Entry'].lower() != 'NOW'.lower()):
                     trade['Entry'] = float((signal[0].split())[-1].replace('@',''))
                 trade['StopLoss'] = float((signal[2].replace(' ','').split('@'))[-1])
                 trade['TP'] = [float((signal[3].replace(' ','').split('@'))[-1])]
@@ -273,21 +299,12 @@ def ParseSignal(signal: str) -> dict:
                 if (len(signal) >= 5 and 'Tp'.lower() in signal[4].lower()):
                     trade['TP'].append(float((signal[4].replace(' ','').split('@'))[-1]))
                 
-                trade['RiskFactor'] = RISK_FACTOR
-
-            elif('🔽' in signal[0] or '🔼' in signal[0]):
-                trade['Symbol'] = (signal[0].split())[0][1:]
-                trade['Entry'] = float((signal[0].split())[-1])
-                trade['TP'] = [float((signal[2].replace(' ','').split(':'))[-1])]
-                # checks if there's a TP2 and parses it
-                if('tp' in signal[3].lower()):
-                    trade['TP'].append(float(signal[3].replace(' ','').split(':')[-1]))
-                    trade['StopLoss'] = float((signal[5].replace(' ','').split(':'))[-1])
+                if(len(signal) >= 5 and 'RISK'.lower() in signal[4].lower()):
+                    trade['RiskFactor'] = float((signal[4].split())[-1])
+                elif(len(signal) >= 6 and 'RISK'.lower() in signal[5].lower()):
+                    trade['RiskFactor'] = float((signal[5].split())[-1])
                 else:
-                    trade['StopLoss'] = float((signal[4].replace(' ','').split(':'))[-1])
-                
-                trade['RiskFactor'] = RISK_FACTOR
-
+                    trade['RiskFactor'] = RISK_FACTOR
             
             elif('slowly-layer' in signal[7].lower()):
                 trade['Symbol'] = (signal[0].split())[1]
@@ -310,9 +327,9 @@ def ParseSignal(signal: str) -> dict:
 
 
 
-        if(trade['Symbol'].lower() == 'gold'): 
+        if(trade['Symbol'].lower() == 'GOLD'.lower() or trade['Symbol'].lower() == 'XAUUAD'.lower()): 
             trade['Symbol'] = 'XAUUSD'
-    
+   
         # adds risk factor to trade
         #trade['RiskFactor'] = RISK_FACTOR
 
