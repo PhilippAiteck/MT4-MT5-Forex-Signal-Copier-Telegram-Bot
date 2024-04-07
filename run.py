@@ -787,7 +787,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
             multiplier = 0.001
 
         elif(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
-            multiplier = 0.5
+            multiplier = 1
 
         elif(str(trade['Entry']).index('.') >= 2):
             multiplier = 0.01
