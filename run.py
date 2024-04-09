@@ -218,12 +218,20 @@ def ParseSignal(signal: str) -> dict:
             #trade['TP'] = [0, 0, 0]
 
             if(trade['OrderType'] == 'ACHAT'):
-                trade['StopLoss'] = float(trade['Entry'] - 3000)
-                trade['TP'] = [trade['Entry'] + 1000, trade['Entry'] + 2000, trade['Entry'] + 3000]
+                if(len(signal) > 7 and 'TP1'.lower() in signal[4].lower()):
+                    trade['TP'] = [signal[4].split(' : ')[-1].replace(' ',''), signal[5].split(':')[-1].replace(' ',''), trade['Entry'] + 3000]
+                    trade['StopLoss'] = float((signal[8].replace(' ','').split(':'))[-1])
+                else:
+                    trade['TP'] = [trade['Entry'] + 300, trade['Entry'] + 1200, trade['Entry'] + 3000]
+                    trade['StopLoss'] = float((signal[6].replace('🔒','').replace(' ','').split(':'))[-1])
 
             if(trade['OrderType'] == 'VENTE'):
-                trade['StopLoss'] = float(trade['Entry'] + 3000)
-                trade['TP'] = [trade['Entry'] - 1000, trade['Entry'] - 2000, trade['Entry'] - 3000]
+                if(len(signal) > 7 and 'TP1'.lower() in signal[4].lower()):
+                    trade['TP'] = [signal[4].split(' : ')[-1].replace(' ',''), signal[5].split(':')[-1].replace(' ',''), trade['Entry'] - 3000]
+                    trade['StopLoss'] = float((signal[8].replace(' ','').split(':'))[-1])
+                else:
+                    trade['TP'] = [trade['Entry'] - 300, trade['Entry'] - 1200, trade['Entry'] - 3000]
+                    trade['StopLoss'] = float((signal[6].replace('🔒','').replace(' ','').split(':'))[-1])
 
         else:
             
