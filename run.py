@@ -1448,6 +1448,8 @@ def handle_message(update: Update, context: CallbackContext):
     if (len(signal) < 4):
         regex_functions = {
                 r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
+                r"\bTOUCHÉ  À\b": TakeProfitTrade, # message handler for Take Profit
+                r"\bTOUCHÉ À\b": TakeProfitTrade, # message handler for Take Profit
                 r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
 
                 r"\bSL\b": EditStopTrade, # message handler to edit SL
