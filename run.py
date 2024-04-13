@@ -219,18 +219,18 @@ def ParseSignal(signal: str) -> dict:
 
             if(trade['OrderType'] == 'ACHAT'):
                 if(len(signal) > 7 and 'TP1'.lower() in signal[4].lower()):
-                    trade['TP'] = [signal[4].split(' : ')[-1].replace(' ',''), signal[5].split(':')[-1].replace(' ',''), trade['Entry'] + 3000]
+                    trade['TP'] = [float(signal[4].split(' : ')[-1].replace(' ','')), float(signal[5].split(':')[-1].replace(' ','')), trade['Entry'] + 3000]
                     trade['StopLoss'] = float((signal[8].replace(' ','').split(':'))[-1])
                 else:
-                    trade['TP'] = [trade['Entry'] + 300, trade['Entry'] + 1200, trade['Entry'] + 3000]
+                    trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
                     trade['StopLoss'] = float((signal[6].replace('🔒','').replace(' ','').split(':'))[-1])
 
             if(trade['OrderType'] == 'VENTE'):
                 if(len(signal) > 7 and 'TP1'.lower() in signal[4].lower()):
-                    trade['TP'] = [signal[4].split(' : ')[-1].replace(' ',''), signal[5].split(':')[-1].replace(' ',''), trade['Entry'] - 3000]
+                    trade['TP'] = [float(signal[4].split(' : ')[-1].replace(' ','')), float(signal[5].split(':')[-1].replace(' ','')), trade['Entry'] - 3000]
                     trade['StopLoss'] = float((signal[8].replace(' ','').split(':'))[-1])
                 else:
-                    trade['TP'] = [trade['Entry'] - 300, trade['Entry'] - 1200, trade['Entry'] - 3000]
+                    trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
                     trade['StopLoss'] = float((signal[6].replace('🔒','').replace(' ','').split(':'))[-1])
 
         else:
@@ -1445,7 +1445,7 @@ def handle_message(update: Update, context: CallbackContext):
     #logger.info(len(signal))
 
     # Liste des expressions régulières et fonctions associées
-    if (len(signal) <= 2):
+    if (len(signal) == 1):
         regex_functions = {
                 r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
                 r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
@@ -1463,27 +1463,34 @@ def handle_message(update: Update, context: CallbackContext):
 
         }
     else:
-        regex_functions = {
-                r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
-                r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
+        if (len(signal) == 7):
+            regex_functions = {
+                    r"\bOuvert\b": PlaceTrade, # message handler for entering trade
+                    #r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
 
-                r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+                    #r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
 
-                #r"\btp\b": PlaceTrade, # message handler for entering trade
-                r"\bSl\b": PlaceTrade, # message handler for entering trade
-                r"\bSL\b": PlaceTrade, # message handler for entering trade
-                r"\bsl\b": PlaceTrade, # message handler for entering trade
-                r"\bsL\b": PlaceTrade, # message handler for entering trade
-                #r"\btp2\b": PlaceTrade, # message handler for entering trade
-                #r"\btp 2\b": PlaceTrade, # message handler for entering trade
-                #r"\bTp2\b": PlaceTrade, # message handler for entering trade
-                #r"\bTp 2\b": PlaceTrade, # message handler for entering trade
-                #r"\bSL@\b": PlaceTrade, # message handler for entering trade
-                #r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
-                #r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
-                # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+            }
+        else:
+            regex_functions = {
+                    #r"\bOuvert\b": PlaceTrade, # message handler for entering trade
+                    r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
 
-        }
+                    r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+
+                    #r"\btp\b": PlaceTrade, # message handler for entering trade
+                    r"\bSl\b": PlaceTrade, # message handler for entering trade
+                    r"\bSL\b": PlaceTrade, # message handler for entering trade
+                    #r"\btp2\b": PlaceTrade, # message handler for entering trade
+                    #r"\btp 2\b": PlaceTrade, # message handler for entering trade
+                    #r"\bTp2\b": PlaceTrade, # message handler for entering trade
+                    #r"\bTp 2\b": PlaceTrade, # message handler for entering trade
+                    #r"\bSL@\b": PlaceTrade, # message handler for entering trade
+                    #r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+                    #r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
+                    # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+            
+            }
 
 
     """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
