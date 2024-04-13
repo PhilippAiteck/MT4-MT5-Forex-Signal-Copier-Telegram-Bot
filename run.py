@@ -1463,17 +1463,17 @@ def handle_message(update: Update, context: CallbackContext):
 
         }
     else:
-        if (len(signal) == 7):
-            regex_functions = {
-                    r"\bOuvert\b": PlaceTrade, # message handler for entering trade
-                    #r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
+        # if (len(signal) == 7):
+        #     regex_functions = {
+        #             r"\bOuvert\b": PlaceTrade, # message handler for entering trade
+        #             #r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
 
-                    #r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+        #             #r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
 
-            }
-        else:
+        #     }
+        # else:
             regex_functions = {
-                    #r"\bOuvert\b": PlaceTrade, # message handler for entering trade
+                    r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
                     r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
 
                     r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
