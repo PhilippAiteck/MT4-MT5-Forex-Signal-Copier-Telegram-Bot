@@ -1445,7 +1445,7 @@ def handle_message(update: Update, context: CallbackContext):
     #logger.info(len(signal))
 
     # Liste des expressions régulières et fonctions associées
-    if (len(signal) == 1):
+    if (len(signal) == 1 or len(signal) == 2):
         regex_functions = {
                 r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
                 r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
