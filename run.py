@@ -807,15 +807,15 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
 
         # Symbols editing
-        if account_information['broker'] == 'AXSE Brokerage Ltd.':
+        if 'AXSE Brokerage' in account_information['broker']:
             trade['Symbol'] = trade['Symbol']+"_raw"
             #logger.info(trade['Symbol'])
 
-        if account_information['server'] == 'Exness-MT5Trial10':
+        if 'Exness-MT5Trial' in account_information['server']:
             trade['Symbol'] = trade['Symbol']+"z"
             #logger.info(trade['Symbol'])
 
-        if account_information['broker'] == 'EightCap Global Ltd':
+        if 'Eightcap' in account_information['broker']:
             # Calculer la vrai balance du challenge
             balance = (account_information['balance'] * 5) / 100
             if(multiplier == 1):
@@ -1493,7 +1493,9 @@ def handle_message(update: Update, context: CallbackContext):
                     #r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
                     #r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
                     # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
-             
+                    
+                    #r"\bclose half\b": CloseAllTrade, # message handler to CLOSE PARTIAL POSITION
+
             }
 
 
