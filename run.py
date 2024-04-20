@@ -512,29 +512,29 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
     #update.effective_message.reply_text(signalInfos_converted)
 
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        #connection = context.bot_data['mt_streaming_connection']
+        #update.effective_message.reply_text(f"CONNECTION: {connection}")
         
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
@@ -545,8 +545,8 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
             # Et si le signal n'est pas une reponse
             if update.effective_message.reply_to_message is None:
                 # Récuperation de toutes les positions en cours
-                positions = connection.terminal_state.positions
-                #positions = await connection.get_positions()
+                #positions = connection.terminal_state.positions
+                positions = await connection.get_positions()
                 # On boucle dans les resultats "positions"
                 for position in positions:
                     # On verifie certaines conditions
@@ -579,16 +579,12 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
                 # On boucle dans la sous-liste "messageid" recupérer les ID "position_id" 
                 for position_id in signalInfos_converted[messageid]:
                     if 'pourcentage' in trade and trade['pourcentage'] is not None:
-                        #position = await connection.get_position(position_id)
-                        # Récuperation de toutes les positions en cours
-                        positions = connection.terminal_state.positions
-                        for position in positions:
-                            if position_id == position['id']:
-                                # Fermer la position partiellement
-                                pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
-                                result = await connection.close_position_partially(position_id, pourcentage_volume)
-                                update.effective_message.reply_text(f"Position {position_id} fermée partiellement avec succes.")
-                                logger.info(result)
+                        position = await connection.get_position(position_id)
+                        # Fermer la position partiellement
+                        pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
+                        result = await connection.close_position_partially(position_id, pourcentage_volume)
+                        update.effective_message.reply_text(f"Position {position_id} fermée partiellement avec succes.")
+                        logger.info(result)
                     else:
                         # On Ferme ensuite entièrement toutes les positions de la liste
                         result = await connection.close_position(position_id)
@@ -598,19 +594,15 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
         else:
             # Sinon le signal est un TAKEPROFIT ou une cloture volontaire
             if 'pourcentage' in trade and trade['pourcentage'] is not None:
-                #position = await connection.get_position(trade_id)
-                # Récuperation de toutes les positions en cours
-                positions = connection.terminal_state.positions
-                for position in positions:
-                    # Si la position existe ou est en cour d'exécution 
-                    #if position is not None:
-                    if trade_id == position['id']:
-                        # Récupération du volume de la position et calcul du pourcentage du volume à fermer
-                        pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
-                        # Fermer la position partiellement
-                        result = await connection.close_position_partially(trade_id, pourcentage_volume)
-                        update.effective_message.reply_text(f"Position {trade_id} fermée partiellement avec succes.")
-                        logger.info(result)
+                position = await connection.get_position(trade_id)
+                # Si la position existe ou est en cour d'exécution 
+                if position is not None:
+                    # Récupération du volume de la position et calcul du pourcentage du volume à fermer
+                    pourcentage_volume = round(float(trade['pourcentage']) / 100 * position['volume'], 2)
+                    # Fermer la position partiellement
+                    result = await connection.close_position_partially(trade_id, pourcentage_volume)
+                    update.effective_message.reply_text(f"Position {trade_id} fermée partiellement avec succes.")
+                    logger.info(result)
             else:            
                 # On ferme donc la position
                 result = await connection.close_position(trade_id)
@@ -624,19 +616,15 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
                 # On boucle dans la sous-liste "messageid" pour recupérer les deux derniers ID  
                 for position_id in signalInfos_converted[messageid][1:]:
                     # Récupération des informations sur la position avec "position_id"
-                    #position = await connection.get_position(position_id)
-                    # Récuperation de toutes les positions en cours
-                    positions = connection.terminal_state.positions
-                    for position in positions:
-                        # Si la position existe ou est en cour d'exécution 
-                        #if position is not None:
-                        if trade_id == position['id']:
-                            # Récupération du prix d'entré et take profit de la position 
-                            opening_price = position['openPrice']
-                            takeprofit = position['takeProfit']
-                            # Appliquez un breakeven pour sur la position de la liste
-                            await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
-                            update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
+                    position = await connection.get_position(position_id)
+                    # Si la position existe ou est en cour d'exécution 
+                    if position is not None:
+                        # Récupération du prix d'entré et take profit de la position 
+                        opening_price = position['openPrice']
+                        takeprofit = position['takeProfit']
+                        # Appliquez un breakeven pour sur la position de la liste
+                        await connection.modify_position(position_id, stop_loss=opening_price, take_profit=takeprofit)
+                        update.effective_message.reply_text(f"Breakeven défini pour la position {position_id}.")
 
 
         return result
@@ -657,29 +645,29 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
     #messageid = update.effective_message.reply_to_message.message_id
 
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
-        # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        # # Récupérer la connexion à partir du contexte de l'application
+        # connection = context.bot_data['mt_streaming_connection']
+        # update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # obtains account information from MetaTrader server
         #account_information = await connection.get_account_information()
@@ -689,19 +677,17 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
         #logger.info(update.effective_message.reply_to_message.message_id)
 
         if update.effective_message.reply_to_message is None:
-            # Récuperation de toutes les positions en cours
-            positions = connection.terminal_state.positions
-            for position in positions:
-                if(trade['trade_id'] == position['id'] and 'BE' in update.effective_message.text):
-                    #position = await connection.get_position(trade['trade_id'])
-                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                    update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
-                else:
-                    #positions = await connection.get_positions()
-                    #logger.info(positions)
-                    # On vérifie si le symbol est spécifié
-                    #for position in positions:
+            if('BE' in update.effective_message.text):
+                position = await connection.get_position(trade['trade_id'])
+                # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
+            else:
+                #positions = connection.terminal_state.positions
+                positions = await connection.get_positions()
+                #logger.info(positions)
+                # On vérifie si le symbol est spécifié
+                for position in positions:
                     if (not trade['symbol'] and not trade['ordertype']) \
                         or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
                         or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
@@ -732,30 +718,27 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
             # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
                 # Récupérez la position
-                #position = await connection.get_position(position_id)
-                positions = connection.terminal_state.positions
-                for position in positions:
-                #if position is not None:
-                    if position_id == position['id']:                
-                        #opening_price = position['openPrice']
-                        #takeprofit = position['takeProfit']
-                        #stoploss = position['stopLoss']
-                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                        if('BRV' in update.effective_message.text):
-                            await connection.modify_position(position_id, stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
-                        elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
-                            await connection.modify_position(position_id, stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
-                            update.effective_message.reply_text(f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour la position {position_id}.")
-                        elif('SL' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                            await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"StopLoss: {trade['newstop']} défini pour la position {position_id}.")
-                        elif('TP' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                            await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
-                            update.effective_message.reply_text(f"TakeProfit: {trade['newstop']} défini pour la position {position_id}.")
+                position = await connection.get_position(position_id)
+                if position is not None:
+                    #opening_price = position['openPrice']
+                    #takeprofit = position['takeProfit']
+                    #stoploss = position['stopLoss']
+                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
+                    if('BRV' in update.effective_message.text):
+                        await connection.modify_position(position_id, stop_loss=position['openPrice'], take_profit=position['takeProfit'])
+                        update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
+                    elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
+                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
+                        await connection.modify_position(position_id, stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
+                        update.effective_message.reply_text(f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour la position {position_id}.")
+                    elif('SL' in update.effective_message.text):
+                        # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                        await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit'])
+                        update.effective_message.reply_text(f"StopLoss: {trade['newstop']} défini pour la position {position_id}.")
+                    elif('TP' in update.effective_message.text):
+                        # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
+                        await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
+                        update.effective_message.reply_text(f"TakeProfit: {trade['newstop']} défini pour la position {position_id}.")
         
 
     except Exception as error:
@@ -778,33 +761,33 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
     api = MetaApi(API_KEY)
     
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        #connection = context.bot_data['mt_streaming_connection']
+        #update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # obtains account information from MetaTrader server
-        account_information = connection.terminal_state.account_information
-        #account_information = await connection.get_account_information()
+        #account_information = connection.terminal_state.account_information
+        account_information = await connection.get_account_information()
 
         # calculates the stop loss in pips
         if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP'):
@@ -846,8 +829,8 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
         # checks if the order is a market execution to get the current price of symbol
         #if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
-        price = connection.terminal_state.price(symbol=trade['Symbol'])
-        #price = await connection.get_symbol_price(symbol=trade['Symbol'])
+        #price = connection.terminal_state.price(symbol=trade['Symbol'])
+        price = await connection.get_symbol_price(symbol=trade['Symbol'])
 
         # uses bid price if the order type is a buy
         if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
@@ -937,33 +920,33 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
     api = MetaApi(API_KEY)
 
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        #connection = context.bot_data['mt_streaming_connection']
+        #update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # Fetch open positions
-        positions = connection.terminal_state.positions
-        #positions = await connection.get_positions()
+        #positions = connection.terminal_state.positions
+        positions = await connection.get_positions()
 
 
         if not positions:
@@ -1599,8 +1582,8 @@ async def init_meta_api():
     # Maintenir le bot actif
     await updater.idle()
 
-#def main() -> None:
-async def main() -> None:
+def main() -> None:
+# async def main() -> None:
     """Runs the Telegram bot."""
     # Configuration du bot Telegram
     updater = Updater(TOKEN, use_context=True)
@@ -1608,40 +1591,40 @@ async def main() -> None:
     # get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # Connect to Metatrader
-    api = MetaApi(API_KEY)
+    # # Connect to Metatrader
+    # api = MetaApi(API_KEY)
 
-    account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-    initial_state = account.state
-    deployed_states = ['DEPLOYING', 'DEPLOYED']
+    # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+    # initial_state = account.state
+    # deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-    if initial_state not in deployed_states:
-        #  wait until account is deployed and connected to broker
-        logger.info('Deploying account')
-        await account.deploy()
+    # if initial_state not in deployed_states:
+    #     #  wait until account is deployed and connected to broker
+    #     logger.info('Deploying account')
+    #     await account.deploy()
 
-    logger.info('Waiting for API server to connect to broker ...')
-    await account.wait_connected()
+    # logger.info('Waiting for API server to connect to broker ...')
+    # await account.wait_connected()
 
-    # connect to MetaApi API
-    connection = account.get_streaming_connection()
-    await connection.connect()
+    # # connect to MetaApi API
+    # connection = account.get_streaming_connection()
+    # await connection.connect()
     
-    # access local copy of terminal state
-    terminalState = connection.terminal_state
+    # # access local copy of terminal state
+    # terminalState = connection.terminal_state
 
-    # Stockage de la connexion dans le contexte de l'application
-    dp.bot_data['mt_streaming_connection'] = connection
+    # # Stockage de la connexion dans le contexte de l'application
+    # dp.bot_data['mt_streaming_connection'] = connection
 
-    # wait until terminal state synchronized to the local state
-    logger.info('Waiting for SDK to synchronize to terminal state ...')
-    await connection.wait_synchronized()
+    # # wait until terminal state synchronized to the local state
+    # logger.info('Waiting for SDK to synchronize to terminal state ...')
+    # await connection.wait_synchronized()
 
-    print(terminalState.connected)
-    print(terminalState.connected_to_broker)
-    print(terminalState.account_information)
+    # print(terminalState.connected)
+    # print(terminalState.connected_to_broker)
+    # print(terminalState.account_information)
 
-    logger.error(f'Error: {error}')
+    #logger.error(f'Error: {error}')
     #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
     
     # message handler
@@ -1689,6 +1672,7 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
+    main()
+
     # Exécuter la boucle principale
-    #main()
-    asyncio.run(main())
+    #asyncio.run(main())
