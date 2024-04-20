@@ -512,29 +512,29 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
     #update.effective_message.reply_text(signalInfos_converted)
 
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        #connection = context.bot_data['mt_streaming_connection']
+        #update.effective_message.reply_text(f"CONNECTION: {connection}")
         
         # Fetch profit of the position
         #position = await connection.get_history_orders_by_position(position_id=trade_id)
@@ -645,29 +645,29 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
     #messageid = update.effective_message.reply_to_message.message_id
 
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
-        # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        # # Récupérer la connexion à partir du contexte de l'application
+        # connection = context.bot_data['mt_streaming_connection']
+        # update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # obtains account information from MetaTrader server
         #account_information = await connection.get_account_information()
@@ -761,29 +761,29 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
     api = MetaApi(API_KEY)
     
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        #connection = context.bot_data['mt_streaming_connection']
+        #update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # obtains account information from MetaTrader server
         #account_information = connection.terminal_state.account_information
@@ -920,29 +920,29 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
     api = MetaApi(API_KEY)
 
     try:
-        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        # initial_state = account.state
-        # deployed_states = ['DEPLOYING', 'DEPLOYED']
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        # if initial_state not in deployed_states:
-        #     #  wait until account is deployed and connected to broker
-        #     logger.info('Deploying account')
-        #     await account.deploy()
+        if initial_state not in deployed_states:
+            #  wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
 
-        # logger.info('Waiting for API server to connect to broker ...')
-        # await account.wait_connected()
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
 
-        # # connect to MetaApi API
-        # connection = account.get_rpc_connection()
-        # await connection.connect()
+        # connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
 
-        # # wait until terminal state synchronized to the local state
-        # logger.info('Waiting for SDK to synchronize to terminal state ...')
-        # await connection.wait_synchronized()
+        # wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
 
         # Récupérer la connexion à partir du contexte de l'application
-        connection = context.bot_data['mt_streaming_connection']
-        update.effective_message.reply_text(f"CONNECTION: {connection}")
+        #connection = context.bot_data['mt_streaming_connection']
+        #update.effective_message.reply_text(f"CONNECTION: {connection}")
 
         # Fetch open positions
         #positions = connection.terminal_state.positions
@@ -1582,8 +1582,8 @@ async def init_meta_api():
     # Maintenir le bot actif
     await updater.idle()
 
-#def main() -> None:
-async def main() -> None:
+def main() -> None:
+# async def main() -> None:
     """Runs the Telegram bot."""
     # Configuration du bot Telegram
     updater = Updater(TOKEN, use_context=True)
@@ -1591,40 +1591,40 @@ async def main() -> None:
     # get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # Connect to Metatrader
-    api = MetaApi(API_KEY)
+    # # Connect to Metatrader
+    # api = MetaApi(API_KEY)
 
-    account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-    initial_state = account.state
-    deployed_states = ['DEPLOYING', 'DEPLOYED']
+    # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+    # initial_state = account.state
+    # deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-    if initial_state not in deployed_states:
-        #  wait until account is deployed and connected to broker
-        logger.info('Deploying account')
-        await account.deploy()
+    # if initial_state not in deployed_states:
+    #     #  wait until account is deployed and connected to broker
+    #     logger.info('Deploying account')
+    #     await account.deploy()
 
-    logger.info('Waiting for API server to connect to broker ...')
-    await account.wait_connected()
+    # logger.info('Waiting for API server to connect to broker ...')
+    # await account.wait_connected()
 
-    # connect to MetaApi API
-    connection = account.get_rpc_connection()
-    await connection.connect()
+    # # connect to MetaApi API
+    # connection = account.get_streaming_connection()
+    # await connection.connect()
     
-    # access local copy of terminal state
-    #terminalState = connection.terminal_state
+    # # access local copy of terminal state
+    # terminalState = connection.terminal_state
 
-    # Stockage de la connexion dans le contexte de l'application
-    dp.bot_data['mt_streaming_connection'] = connection
+    # # Stockage de la connexion dans le contexte de l'application
+    # dp.bot_data['mt_streaming_connection'] = connection
 
-    # wait until terminal state synchronized to the local state
-    logger.info('Waiting for SDK to synchronize to terminal state ...')
-    await connection.wait_synchronized()
+    # # wait until terminal state synchronized to the local state
+    # logger.info('Waiting for SDK to synchronize to terminal state ...')
+    # await connection.wait_synchronized()
 
     # print(terminalState.connected)
     # print(terminalState.connected_to_broker)
     # print(terminalState.account_information)
 
-    logger.error(f'Error: {error}')
+    #logger.error(f'Error: {error}')
     #update.effective_message.reply_text(f"Failed to conneect to MetaTrader. Error: {error}")
     
     # message handler
@@ -1672,7 +1672,7 @@ async def main() -> None:
 
 
 if __name__ == '__main__':
-    # Exécuter la boucle principale
-    #main()
-    asyncio.run(main())
+    main()
 
+    # Exécuter la boucle principale
+    #asyncio.run(main())
