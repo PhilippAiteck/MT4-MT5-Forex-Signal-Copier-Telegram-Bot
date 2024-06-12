@@ -790,14 +790,14 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         account_information = await connection.get_account_information()
 
         # calculates the stop loss in pips
-        if(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP' or trade['Symbol'] in CRYPTO):
+        if(trade['Symbol'] in INDICES or trade['Symbol'] in CRYPTO):
+            multiplier = 10
+
+        elif(trade['Symbol'] == 'XAUUSD' or trade['Symbol'] == 'XAUEUR' or trade['Symbol'] == 'XAUGBP' ):
             multiplier = 0.1
 
         elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
             multiplier = 0.001
-
-        elif(trade['Symbol'] in INDICES):
-            multiplier = 1
 
         elif(str(trade['Entry']).index('.') >= 2 or 'JPY' in trade['Symbol']):
             multiplier = 0.01
