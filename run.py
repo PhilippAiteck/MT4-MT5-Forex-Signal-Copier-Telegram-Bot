@@ -799,7 +799,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         elif(trade['Symbol'] == 'XAGUSD' or trade['Symbol'] == 'XAGEUR' or trade['Symbol'] == 'XAGGBP'):
             multiplier = 0.001
 
-        elif(str(trade['Entry']).index('.') >= 2 or 'JPY' in trade['Symbol']):
+        elif('JPY' in trade['Symbol'] or str(trade['Entry']).index('.') >= 2 ):
             multiplier = 0.01
 
         else:
@@ -864,37 +864,37 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
                 # executes buy market execution order
                 if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_market_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
+                        result = await connection.create_market_buy_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['StopLoss'], takeProfit)
                         tradeid.append(result['positionId'])
 
                 # executes buy limit order
                 elif(trade['OrderType'] == 'Buy Limit'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_limit_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
+                        result = await connection.create_limit_buy_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['Entry'], trade['StopLoss'], takeProfit)
                         tradeid.append(result['orderId'])
 
                 # executes buy stop order
                 elif(trade['OrderType'] == 'Buy Stop'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_stop_buy_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
+                        result = await connection.create_stop_buy_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['Entry'], trade['StopLoss'], takeProfit)
                         tradeid.append(result['orderId'])
 
                 # executes sell market execution order
                 elif(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_market_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['StopLoss'], takeProfit)
+                        result = await connection.create_market_sell_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['StopLoss'], takeProfit)
                         tradeid.append(result['positionId'])
 
                 # executes sell limit order
                 elif(trade['OrderType'] == 'Sell Limit'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_limit_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
+                        result = await connection.create_limit_sell_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['Entry'], trade['StopLoss'], takeProfit)
                         tradeid.append(result['orderId'])
 
                 # executes sell stop order
                 elif(trade['OrderType'] == 'Sell Stop'):
                     for takeProfit in trade['TP']:
-                        result = await connection.create_stop_sell_order(trade['Symbol'], trade['PositionSize'] / len(trade['TP']), trade['Entry'], trade['StopLoss'], takeProfit)
+                        result = await connection.create_stop_sell_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['Entry'], trade['StopLoss'], takeProfit)
                         tradeid.append(result['orderId'])
 
                 # prints PositionID to user
