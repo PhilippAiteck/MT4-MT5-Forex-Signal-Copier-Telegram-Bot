@@ -811,9 +811,16 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
             trade['Symbol'] = trade['Symbol']+"_raw"
             #logger.info(trade['Symbol'])
 
-        if 'Exness-MT5Trial' in account_information['server']:
-            trade['Symbol'] = trade['Symbol']+"z"
-            #logger.info(trade['Symbol'])
+        if 'Exness' in account_information['broker']:
+            if 'Standard'.lower() in account_information['name'].lower():
+                trade['Symbol'] = trade['Symbol']+"m"
+                #logger.info(trade['Symbol'])
+            elif 'ZeroSpread'.lower() in account_information['name'].lower():
+                trade['Symbol'] = trade['Symbol']+"z"
+                #logger.info(trade['Symbol'])
+            #else:
+                #trade['Symbol'] = trade['Symbol']
+                #logger.info(trade['Symbol'])
 
         if 'Eightcap' in account_information['broker']:
             # Calculer la vrai balance du challenge
