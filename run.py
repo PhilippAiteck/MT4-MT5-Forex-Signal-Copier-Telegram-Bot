@@ -6,13 +6,14 @@ import os
 import re
 import json
 import requests
+import pandas as pd
 
 try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from metaapi_cloud_sdk import MetaApi
 from prettytable import PrettyTable
@@ -990,6 +991,51 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
     return
 
 
+async def ConnectGetTradeHistory(update: Update, context: CallbackContext) -> None:
+    """Retrieves trade history and updates an Excel file.
+    
+    Arguments:
+        update: update from Telegram
+    """
+    api = MetaApi(API_KEY)
+
+    try:
+        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        initial_state = account.state
+        deployed_states = ['DEPLOYING', 'DEPLOYED']
+
+        if initial_state not in deployed_states:
+            # Wait until account is deployed and connected to broker
+            logger.info('Deploying account')
+            await account.deploy()
+
+        logger.info('Waiting for API server to connect to broker ...')
+        await account.wait_connected()
+
+        # Connect to MetaApi API
+        connection = account.get_rpc_connection()
+        await connection.connect()
+
+        # Wait until terminal state synchronized to the local state
+        logger.info('Waiting for SDK to synchronize to terminal state ...')
+        await connection.wait_synchronized()
+
+        # Fetch historical trades
+        history = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+
+        # Update Excel file with the retrieved data
+        update_excel_file(history)
+
+        # Send the updated Excel file via Telegram
+        send_excel_file(update, context)
+
+    except Exception as error:
+        logger.error(f'Error: {error}')
+        update.effective_message.reply_text(f"Failed to retrieve trade history. Error: {error}")
+
+    return
+
+
 # Handler Functions
 def PlaceTrade(update: Update, context: CallbackContext) -> int:
     """Parses trade and places on MetaTrader account.   
@@ -1295,6 +1341,53 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
     context.chat_data['trade'] = None
 
     return ConversationHandler.END
+
+def update_excel_file(history):
+    """Updates the Excel file with trade history.
+    
+    Arguments:
+        history: List of trades
+    """
+    # Load existing Excel file
+    file_path = 'Trading-journal-template.xlsx'
+    df = pd.read_excel(file_path, sheet_name='Trades')
+
+    # Append new trade history to the DataFrame
+    for trade in history:
+        new_row = {
+            'id': trade['id'],
+            'entryDate': trade['entry_time'],
+            'exitDate': trade['close_time'],
+            'type': trade['type'],
+            'symbol': trade['symbol'],
+            'entryPrice': trade['entry_price'],
+            'exitPrice': trade['close_price'],
+            'gainAmount': trade['profit'],
+            'quantity': trade['volume'],
+            'fees': trade['commission'],
+            'gainPercent': (trade['profit'] / trade['entry_price']) * 100,
+            'win': trade['profit'] > 0,
+            'tradeCount': len(history),
+            'entryDateTime': trade['entry_time'],
+            'exitDateTime': trade['close_time'],
+            'accProfit': df['gainAmount'].sum() + trade['profit']
+        }
+        df = df.append(new_row, ignore_index=True)
+
+    # Save the updated DataFrame to Excel
+    df.to_excel(file_path, sheet_name='Trades', index=False)
+
+
+
+def send_excel_file(update: Update, context: CallbackContext) -> None:
+    """Sends the updated Excel file via Telegram.
+    
+    Arguments:
+        update: update from Telegram
+    """
+    file_path = 'Trading-journal-template.xlsx'
+    with open(file_path, 'rb') as file:
+        context.bot.send_document(chat_id=update.effective_chat.id, document=file)
 
 
 # Command Handlers
@@ -1655,6 +1748,10 @@ def main() -> None:
 
     # command to receive information about all trades and their message ID.
     dp.add_handler(CommandHandler("messagetrade_ids", GetMessageTradeIDs))
+
+    # command to retreive all trades to an excel file.
+    dp.add_handler(CommandHandler("trade_history", ConnectGetTradeHistory))  # New handler for trade history
+
 
     # conversation handler for entering trade or calculating trade information
     dp.add_handler(conv_handler)
