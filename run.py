@@ -1377,8 +1377,6 @@ def update_excel_file(history):
     # Save the updated DataFrame to Excel
     df.to_excel(file_path, sheet_name='Trades', index=False)
 
-
-
 def send_excel_file(update: Update, context: CallbackContext) -> None:
     """Sends the updated Excel file via Telegram.
     
@@ -1504,6 +1502,19 @@ def GetOpenTradeIDs(update: Update, context: CallbackContext):
     asyncio.run(ConnectGetOngoingTrades(update, context))
 
     return
+
+def GetTradeHistory(update: Update, context: CallbackContext):
+    """Retrieves information about all ongoing trades.
+
+    Arguments:
+        update: update from Telegram
+    """
+
+    # attempts connection to MetaTrader and retreive ongoing trade
+    asyncio.run(ConnectGetTradeHistory(update, context))
+
+    return
+
 
 def GetMessageTradeIDs(update: Update, context: CallbackContext):
     """Retrieves information about all trades's ID with their message ID .
@@ -1750,7 +1761,7 @@ def main() -> None:
     dp.add_handler(CommandHandler("messagetrade_ids", GetMessageTradeIDs))
 
     # command to retreive all trades to an excel file.
-    dp.add_handler(CommandHandler("trade_history", ConnectGetTradeHistory))  # New handler for trade history
+    dp.add_handler(CommandHandler("trade_history", GetTradeHistory))  # New handler for trade history
 
 
     # conversation handler for entering trade or calculating trade information
