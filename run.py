@@ -16,6 +16,7 @@ except ImportError:
 from datetime import datetime, timedelta
 
 from metaapi_cloud_sdk import MetaApi
+from openpyxl import load_workbook
 from prettytable import PrettyTable
 from telegram import ParseMode, Update
 from telegram.ext import CommandHandler, Filters, MessageHandler, Updater, ConversationHandler, CallbackContext
@@ -1021,7 +1022,10 @@ async def ConnectGetTradeHistory(update: Update, context: CallbackContext) -> No
         await connection.wait_synchronized()
 
         # Fetch historical trades
-        history = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+        deals_response = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+
+        history_response = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+        history = json.loads(history_response['response'])['historyOrders']
 
         # Update Excel file with the retrieved data
         update_excel_file(history)
@@ -1342,50 +1346,184 @@ def CloseAllTrade(update: Update, context: CallbackContext) -> int:
 
     return ConversationHandler.END
 
+def get_exchange_rate():
+    global exchange_rate
+    # Vérifier si le taux de change a déjà été récupéré
+    if exchange_rate is None:
+        # Appel à une API de taux de change
+        response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
+        data = response.json()
+        # Récupération du taux de change USD/XOF
+        exchange_rate = data['rates']['XOF']
+    return exchange_rate
+
+def xof_to_usd(amount_xof):
+    # Obtenir le taux de change
+    exchange_rate = get_exchange_rate()
+    amount_usd = amount_xof / exchange_rate
+    return amount_usd
+
+# Fonction pour gérer les messages
+def handle_message(update: Update, context: CallbackContext):
+    if update.effective_message.caption is not None:
+        text_received = update.effective_message.caption
+    else:
+        text_received = update.effective_message.text
+    #chat_title = update.message.forward_from_chat.title
+    #logger.info(text_received)
+
+    # converts message to list of strings for parsing
+    signal = text_received.splitlines()
+    #logger.info(len(signal))
+
+    # Liste des expressions régulières et fonctions associées
+    if (len(signal) < 4):
+        regex_functions = {
+                r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
+                r"\bTOUCHÉ\b": TakeProfitTrade, # message handler for Take Profit
+                r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
+
+                r"\bSL\b": EditStopTrade, # message handler to edit SL
+                r"\bTP\b": EditStopTrade, # message handler to edit TP
+                
+                r"\bBRV\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
+                r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
+                
+                r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
+                r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
+                r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
+                r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
+
+        }
+    else:
+        # if (len(signal) == 7):
+        #     regex_functions = {
+        #             r"\bOuvert\b": PlaceTrade, # message handler for entering trade
+        #             #r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
+
+        #             #r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+
+        #     }
+        # else:
+            regex_functions = {
+                    r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
+                    r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
+
+                    r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
+
+                    #r"\btp\b": PlaceTrade, # message handler for entering trade
+                    r"\bSl\b": PlaceTrade, # message handler for entering trade
+                    r"\bSL\b": PlaceTrade, # message handler for entering trade
+                    r"\bsl\b": PlaceTrade, # message handler for entering trade
+                    r"\bsL\b": PlaceTrade, # message handler for entering trade
+                    #r"\btp2\b": PlaceTrade, # message handler for entering trade
+                    #r"\btp 2\b": PlaceTrade, # message handler for entering trade
+                    #r"\bTp2\b": PlaceTrade, # message handler for entering trade
+                    #r"\bTp 2\b": PlaceTrade, # message handler for entering trade
+                    #r"\bSL@\b": PlaceTrade, # message handler for entering trade
+                    #r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
+                    #r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
+                    # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
+                    
+                    #r"\bclose half\b": CloseAllTrade, # message handler to CLOSE PARTIAL POSITION
+
+            }
+
+
+    """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
+            # Liste des expressions régulières et fonctions associées
+            regex_functions = {
+                r"\bTP\b": PlaceTrade, # message handler for entering trade
+                r"\bSECURE PARTIALS MOVE\b": TakeProfitTrade, # message handler to Take Profit
+                #r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
+                #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
+                # Ajoutez d'autres regex et fonctions associées ici
+            }
+            
+        update.effective_message.reply_text(update.message.forward_from_chat.title)
+    """
+    # Vérifiez chaque regex pour trouver une correspondance dans le message
+    for regex_pattern, func in regex_functions.items():
+        if re.search(regex_pattern, text_received):
+            func(update, context)
+            break  # Sort de la boucle après avoir déclenché la première fonction trouvée
+
+# Fonction pour lire les données du fichier JSON
+def read_data_from_json():
+    try:
+        with open('data.json', 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+
+# Fonction pour écrire les données dans le fichier JSON
+def write_data_to_json(data):
+    with open('data.json', 'w') as file:
+        json.dump(data, file)
+
 def update_excel_file(history):
-    """Updates the Excel file with trade history.
+    """Updates an Excel file with the retrieved trade history data.
     
     Arguments:
-        history: List of trades
+        history: list of historical trade data
     """
-    # Load existing Excel file
     file_path = 'Trading-journal-template.xlsx'
-    df = pd.read_excel(file_path, sheet_name='Trades')
+    wb = load_workbook(file_path)
+    ws = wb['trades']
 
-    # Append new trade history to the DataFrame
     for trade in history:
-        new_row = {
-            'id': trade['id'],
-            'entryDate': trade['entry_time'],
-            'exitDate': trade['close_time'],
-            'type': trade['type'],
-            'symbol': trade['symbol'],
-            'entryPrice': trade['entry_price'],
-            'exitPrice': trade['close_price'],
-            'gainAmount': trade['profit'],
-            'quantity': trade['volume'],
-            'fees': trade['commission'],
-            'gainPercent': (trade['profit'] / trade['entry_price']) * 100,
-            'win': trade['profit'] > 0,
-            'tradeCount': len(history),
-            'entryDateTime': trade['entry_time'],
-            'exitDateTime': trade['close_time'],
-            'accProfit': df['gainAmount'].sum() + trade['profit']
-        }
-        df = df.append(new_row, ignore_index=True)
+        if isinstance(trade, dict):
+            trade_info = [
+                trade.get('id', 'N/A'),
+                datetime.strptime(trade.get('time', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d') if trade.get('time') else 'N/A',  # entryDate
+                datetime.strptime(trade.get('doneTime', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d') if trade.get('doneTime') else 'N/A',  # exitDate
+                trade.get('type', 'N/A'),
+                trade.get('symbol', 'N/A'),
+                trade.get('openPrice', 'N/A'),  # entryPrice
+                trade.get('closePrice', 'N/A'),  # exitPrice (if available, otherwise N/A)
+                trade.get('profit', 'N/A'),
+                trade.get('volume', 'N/A'),
+                'N/A',  # fees (if available, otherwise N/A)
+                'N/A',  # gainPercent (if available, otherwise N/A)
+                'N/A',  # win (if available, otherwise N/A)
+                'N/A',  # tradeCount (if available, otherwise N/A)
+                datetime.strptime(trade.get('time', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S') if trade.get('time') else 'N/A',  # entryDateTime
+                datetime.strptime(trade.get('doneTime', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S') if trade.get('doneTime') else 'N/A',  # exitDateTime
+                'N/A'   # accProfit (if available, otherwise N/A)
+            ]
+            ws.append(trade_info)
+        else:
+            logger.warning(f"Invalid trade format: {trade}")
 
-    # Save the updated DataFrame to Excel
-    df.to_excel(file_path, sheet_name='Trades', index=False)
+    # Save the workbook
+    wb.save(file_path)
+    logger.info(f"Trade history has been updated in '{file_path}'.")
 
-def send_excel_file(update: Update, context: CallbackContext) -> None:
+def send_excel_file(update: Update, context: CallbackContext):
     """Sends the updated Excel file via Telegram.
     
     Arguments:
         update: update from Telegram
+        context: callback context from Telegram
     """
-    file_path = 'Trading-journal-template.xlsx'
-    with open(file_path, 'rb') as file:
-        context.bot.send_document(chat_id=update.effective_chat.id, document=file)
+    chat_id = update.message.chat_id
+    context.bot.send_document(chat_id, document=open('Trading-journal-template.xlsx', 'rb'))
+
+
+# Fonction pour envoyer un message
+""" def send_periodic_message(update):
+    chat_id = update.effective_message.chat_id
+    message_text = 'Message à envoyer toutes les 5 minutes'
+    update.effective_message.reply_text(message_text)
+ """
+# Handler pour déclencher l'envoi périodique de message
+""" def periodic_handler(update, context):
+    while True:
+        # Envoi du message périodique
+        for update in context.bot.updates:
+            send_periodic_message(update)
+        asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
+ """
 
 
 # Command Handlers
@@ -1503,6 +1641,15 @@ def GetOpenTradeIDs(update: Update, context: CallbackContext):
 
     return
 
+def GetMessageTradeIDs(update: Update, context: CallbackContext):
+    """Retrieves information about all trades's ID with their message ID .
+
+    """
+    # Retrieves all trades's ID with their message ID from son file.
+    signalInfos = read_data_from_json()
+
+    update.effective_message.reply_text(signalInfos)
+
 def GetTradeHistory(update: Update, context: CallbackContext):
     """Retrieves information about all ongoing trades.
 
@@ -1515,147 +1662,6 @@ def GetTradeHistory(update: Update, context: CallbackContext):
 
     return
 
-
-def GetMessageTradeIDs(update: Update, context: CallbackContext):
-    """Retrieves information about all trades's ID with their message ID .
-
-    """
-    # Retrieves all trades's ID with their message ID from son file.
-    signalInfos = read_data_from_json()
-
-    update.effective_message.reply_text(signalInfos)
-
-def get_exchange_rate():
-    global exchange_rate
-    # Vérifier si le taux de change a déjà été récupéré
-    if exchange_rate is None:
-        # Appel à une API de taux de change
-        response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
-        data = response.json()
-        # Récupération du taux de change USD/XOF
-        exchange_rate = data['rates']['XOF']
-    return exchange_rate
-
-def xof_to_usd(amount_xof):
-    # Obtenir le taux de change
-    exchange_rate = get_exchange_rate()
-    amount_usd = amount_xof / exchange_rate
-    return amount_usd
-
-# Fonction pour gérer les messages
-def handle_message(update: Update, context: CallbackContext):
-    if update.effective_message.caption is not None:
-        text_received = update.effective_message.caption
-    else:
-        text_received = update.effective_message.text
-    #chat_title = update.message.forward_from_chat.title
-    #logger.info(text_received)
-
-    # converts message to list of strings for parsing
-    signal = text_received.splitlines()
-    #logger.info(len(signal))
-
-    # Liste des expressions régulières et fonctions associées
-    if (len(signal) < 4):
-        regex_functions = {
-                r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
-                r"\bTOUCHÉ\b": TakeProfitTrade, # message handler for Take Profit
-                r"\bMETTRE LE\b": EditStopTrade, # message handler to edit SL
-
-                r"\bSL\b": EditStopTrade, # message handler to edit SL
-                r"\bTP\b": EditStopTrade, # message handler to edit TP
-                
-                r"\bBRV\b": EditStopTrade, # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL 
-                r"\bBE\b": EditStopTrade, # message handler to BREAKEVEN Position By ID
-                
-                r"\bPARTIELS\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ORDERTYPE , SYMBOL
-                r"\bPARTIEL\b": CloseAllTrade, # message handler to CLOSE POSITION PARTIALY By ID
-                r"\bCLORES\b": CloseAllTrade, # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL
-                r"\bCLORE\b": CloseAllTrade, # message handler to CLOSE POSITION By ID
-
-        }
-    else:
-        # if (len(signal) == 7):
-        #     regex_functions = {
-        #             r"\bOuvert\b": PlaceTrade, # message handler for entering trade
-        #             #r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
-
-        #             #r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
-
-        #     }
-        # else:
-            regex_functions = {
-                    r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
-                    r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
-
-                    r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
-
-                    #r"\btp\b": PlaceTrade, # message handler for entering trade
-                    r"\bSl\b": PlaceTrade, # message handler for entering trade
-                    r"\bSL\b": PlaceTrade, # message handler for entering trade
-                    r"\bsl\b": PlaceTrade, # message handler for entering trade
-                    r"\bsL\b": PlaceTrade, # message handler for entering trade
-                    #r"\btp2\b": PlaceTrade, # message handler for entering trade
-                    #r"\btp 2\b": PlaceTrade, # message handler for entering trade
-                    #r"\bTp2\b": PlaceTrade, # message handler for entering trade
-                    #r"\bTp 2\b": PlaceTrade, # message handler for entering trade
-                    #r"\bSL@\b": PlaceTrade, # message handler for entering trade
-                    #r"\b💵TP:\b": PlaceTrade, # message handler for entering trade
-                    #r"\b❌SL:\b": PlaceTrade, # message handler for entering trade
-                    # r"\bEnter Slowly-Layer\b": PlaceTrade, # message handler for entering trade
-                    
-                    #r"\bclose half\b": CloseAllTrade, # message handler to CLOSE PARTIAL POSITION
-
-            }
-
-
-    """     if ('ELITE CLUB VIP'.lower() in chat_title.lower()):
-            # Liste des expressions régulières et fonctions associées
-            regex_functions = {
-                r"\bTP\b": PlaceTrade, # message handler for entering trade
-                r"\bSECURE PARTIALS MOVE\b": TakeProfitTrade, # message handler to Take Profit
-                #r"\bFermez le trade\b": TakeProfitTrade, # message handler to Take Profit the last one
-                #r"\bMETTRE LE SL\b": EditSlTrade, # message handler for edit SL
-                # Ajoutez d'autres regex et fonctions associées ici
-            }
-            
-        update.effective_message.reply_text(update.message.forward_from_chat.title)
-    """
-    # Vérifiez chaque regex pour trouver une correspondance dans le message
-    for regex_pattern, func in regex_functions.items():
-        if re.search(regex_pattern, text_received):
-            func(update, context)
-            break  # Sort de la boucle après avoir déclenché la première fonction trouvée
-
-
-# Fonction pour lire les données du fichier JSON
-def read_data_from_json():
-    try:
-        with open('data.json', 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {}
-
-# Fonction pour écrire les données dans le fichier JSON
-def write_data_to_json(data):
-    with open('data.json', 'w') as file:
-        json.dump(data, file)
-
-
-# Fonction pour envoyer un message
-""" def send_periodic_message(update):
-    chat_id = update.effective_message.chat_id
-    message_text = 'Message à envoyer toutes les 5 minutes'
-    update.effective_message.reply_text(message_text)
- """
-# Handler pour déclencher l'envoi périodique de message
-""" def periodic_handler(update, context):
-    while True:
-        # Envoi du message périodique
-        for update in context.bot.updates:
-            send_periodic_message(update)
-        asyncio.sleep(300)  # Attendre 5 minutes avant d'envoyer le prochain message
- """
 
 # Initialise MetaApi
 async def init_meta_api():
