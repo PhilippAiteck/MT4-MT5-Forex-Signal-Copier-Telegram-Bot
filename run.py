@@ -957,7 +957,6 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         #positions = connection.terminal_state.positions
         positions = await connection.get_positions()
         logger.info(positions)
-        update.effective_message.reply_text(positions)
 
 
         if not positions:
