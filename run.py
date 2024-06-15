@@ -1023,7 +1023,7 @@ async def ConnectGetTradeHistory(update: Update, context: CallbackContext) -> No
         await connection.wait_synchronized()
 
         # Fetch historical trades
-        #deals_response = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+        deals = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
         history = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
         #history = json.loads(history_response['response'])['historyOrders']
         logger.info(history)
@@ -1470,7 +1470,7 @@ def update_excel_file(history):
     """
     file_path = 'Trading-journal-template.xlsx'
     wb = load_workbook(file_path)
-    ws = wb['trades']
+    ws = wb['Trades']
 
     for trade in history:
         if isinstance(trade, dict):
@@ -1490,7 +1490,7 @@ def update_excel_file(history):
                 'N/A',  # tradeCount (if available, otherwise N/A)
                 datetime.strptime(trade.get('time', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S') if trade.get('time') else 'N/A',  # entryDateTime
                 datetime.strptime(trade.get('doneTime', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S') if trade.get('doneTime') else 'N/A',  # exitDateTime
-                'N/A'   # accProfit (if available, otherwise N/A)
+                #'N/A'   # accProfit (if available, otherwise N/A)
             ]
             ws.append(trade_info)
         else:
