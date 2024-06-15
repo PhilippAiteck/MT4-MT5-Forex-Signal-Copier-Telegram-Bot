@@ -956,7 +956,7 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         # Fetch open positions
         #positions = connection.terminal_state.positions
         positions = await connection.get_positions()
-        logger.info(positions)
+        #logger.info(positions)
 
 
         if not positions:
@@ -1023,10 +1023,10 @@ async def ConnectGetTradeHistory(update: Update, context: CallbackContext) -> No
         await connection.wait_synchronized()
 
         # Fetch historical trades
-        deals_response = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
-
-        history_response = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
-        history = json.loads(history_response['response'])['historyOrders']
+        #deals_response = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+        history = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+        #history = json.loads(history_response['response'])['historyOrders']
+        logger.info(history)
 
         # Update Excel file with the retrieved data
         update_excel_file(history)
