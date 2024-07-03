@@ -275,23 +275,25 @@ def ParseSignal(signal: str) -> dict:
                 if ('LIMIT'.lower() in signal[1].lower()):
                     trade['TP'] = [float((signal[2].replace(' ','').split('@'))[-1])]
                     trade['TP'].append(float(signal[3].replace(' ','').split('@')[-1]))
-                    trade['StopLoss'] = float((signal[5].replace(' ','').split('@'))[-1])
-                    if(len(signal) > 6 and 'RISK'.lower() in signal[6].lower()):
-                        trade['RiskFactor'] = float((signal[6].split())[-1])
+                    trade['TP'].append(float(signal[4].replace(' ','').split('@')[-1]))
+                    trade['StopLoss'] = float((signal[6].replace(' ','').split('@'))[-1])
+                    if(len(signal) > 7 and 'RISK'.lower() in signal[7].lower()):
+                        trade['RiskFactor'] = float((signal[7].split())[-1])
                     else:
                         trade['RiskFactor'] = RISK_FACTOR
                 else:
                     trade['TP'] = [float((signal[1].replace(' ','').split('@'))[-1])]
                     trade['TP'].append(float(signal[2].replace(' ','').split('@')[-1]))
-                    trade['StopLoss'] = float((signal[4].replace(' ','').split('@'))[-1])
+                    trade['TP'].append(float(signal[3].replace(' ','').split('@')[-1]))
+                    trade['StopLoss'] = float((signal[5].replace(' ','').split('@'))[-1])
                     # checks if there's a TP2 and parses it
                     # if(len(signal) >= 5 and 'tp'.lower() in signal[2].lower()):
                     #     trade['TP'].append(float(signal[2].split()[-1]))
                     #     trade['StopLoss'] = float((signal[4].split())[-1])
                     # else:
                     #     trade['StopLoss'] = float((signal[3].split())[-1])
-                    if(len(signal) > 5 and 'RISK'.lower() in signal[5].lower()):
-                        trade['RiskFactor'] = float((signal[5].split())[-1])
+                    if(len(signal) > 6 and 'RISK'.lower() in signal[6].lower()):
+                        trade['RiskFactor'] = float((signal[6].split())[-1])
                     else:
                         trade['RiskFactor'] = RISK_FACTOR
 
