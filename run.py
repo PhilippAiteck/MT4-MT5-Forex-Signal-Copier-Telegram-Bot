@@ -821,6 +821,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
                         trade['Symbol'] = trade['Symbol']+".i"
                     #logger.info(trade['Symbol'])
             else:
+                balance = account_information['balance']
 
                 if 'Exness' in account_information['broker']:
                     if 'Standard'.lower() in account_information['name'].lower():
