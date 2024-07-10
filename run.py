@@ -809,33 +809,36 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         else:
             multiplier = 0.0001
 
-
         # Symbols editing
-        if 'AXSE Brokerage' in account_information['broker']:
-            trade['Symbol'] = trade['Symbol']+"_raw"
-            #logger.info(trade['Symbol'])
+        if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
+            if 'Trial'.lower() in account_information['name'].lower() or 'Evaluation'.lower() in account_information['name'].lower():
+                # Calculer la vrai balance du challenge
+                balance = (account_information['balance'] * 5) / 100
+                if 'Eightcap' in account_information['broker']:
+                    if(multiplier == 1):
+                        trade['Symbol'] = trade['Symbol']+".b"
+                    elif(trade['Symbol'] in FOREX):
+                        trade['Symbol'] = trade['Symbol']+".i"
+                    #logger.info(trade['Symbol'])
+            else:
 
-        if 'Exness' in account_information['broker']:
-            if 'Standard'.lower() in account_information['name'].lower():
-                trade['Symbol'] = trade['Symbol']+"m"
-                #logger.info(trade['Symbol'])
-            elif 'ZeroSpread'.lower() in account_information['name'].lower():
-                trade['Symbol'] = trade['Symbol']+"z"
-                #logger.info(trade['Symbol'])
-            #else:
-                #trade['Symbol'] = trade['Symbol']
-                #logger.info(trade['Symbol'])
+                if 'Exness' in account_information['broker']:
+                    if 'Standard'.lower() in account_information['name'].lower():
+                        trade['Symbol'] = trade['Symbol']+"m"
+                        #logger.info(trade['Symbol'])
+                    elif 'ZeroSpread'.lower() in account_information['name'].lower():
+                        trade['Symbol'] = trade['Symbol']+"z"
+                        #logger.info(trade['Symbol'])
+                    #else:
+                        #trade['Symbol'] = trade['Symbol']
+                        #logger.info(trade['Symbol'])
 
-        if 'Eightcap' in account_information['broker']:
-            # Calculer la vrai balance du challenge
-            balance = (account_information['balance'] * 5) / 100
-            if(multiplier == 1):
-                trade['Symbol'] = trade['Symbol']+".b"
-            elif(trade['Symbol'] in FOREX):
-                trade['Symbol'] = trade['Symbol']+".i"
-            #logger.info(trade['Symbol'])
         else:
             balance = account_information['balance']
+            if 'AXSE Brokerage' in account_information['broker']:
+                trade['Symbol'] = trade['Symbol']+"_raw"
+                #logger.info(trade['Symbol'])
+
 
 
         # checks if the order is a market execution to get the current price of symbol
