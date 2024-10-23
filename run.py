@@ -254,14 +254,14 @@ def ParseSignal(signal: str) -> dict:
                     trade['RiskFactor'] = RISK_FACTOR
 
 
-            elif('gold' in signal[0].lower()):
-                trade['Symbol'] = (signal[0].split())[1]
-                trade['Entry'] = float((signal[0].split('-'))[1])
-                trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
-                trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
-                trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
+            #elif('gold' in signal[0].lower()):
+            #    trade['Symbol'] = (signal[0].split())[1]
+            #    trade['Entry'] = float((signal[0].split('-'))[1])
+            #    trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
+            #    trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
+            #    trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
                 
-                trade['RiskFactor'] = RISK_FACTOR
+            #    trade['RiskFactor'] = RISK_FACTOR
 
 
             elif('TP'.lower() in signal[1].lower() or 'TP'.lower() in signal[2].lower()):
@@ -841,7 +841,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
             if trade['Symbol'] == 'XAUUSD':
                 trade['Symbol'] = 'GOLD'
                 #logger.info(trade['Symbol'])
-                
+
         elif 'AXSE Brokerage' in account_information['broker']:
             trade['Symbol'] = trade['Symbol']+"_raw"
             #logger.info(trade['Symbol'])
