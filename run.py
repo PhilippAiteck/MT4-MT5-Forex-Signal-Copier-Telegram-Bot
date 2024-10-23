@@ -253,16 +253,16 @@ def ParseSignal(signal: str) -> dict:
                 else:
                     trade['RiskFactor'] = RISK_FACTOR
 
-            
-            #elif('gold' in signal[0].lower()):
-                #trade['Symbol'] = (signal[0].split())[1]
-                #trade['Entry'] = float((signal[0].split('-'))[1])
-                #trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
-                #trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
-                #trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
+
+            elif('gold' in signal[0].lower()):
+                trade['Symbol'] = (signal[0].split())[1]
+                trade['Entry'] = float((signal[0].split('-'))[1])
+                trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
+                trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
+                trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
                 
-                #trade['RiskFactor'] = RISK_FACTOR
-            
+                trade['RiskFactor'] = RISK_FACTOR
+
 
             elif('TP'.lower() in signal[1].lower() or 'TP'.lower() in signal[2].lower()):
                 trade['Symbol'] = (signal[0].split())[0]
@@ -809,36 +809,42 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         else:
             multiplier = 0.0001
 
+
+
         # Symbols editing
-        if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
-            if 'Trial'.lower() in account_information['name'].lower() or 'Evaluation'.lower() in account_information['name'].lower():
-                # Calculer la vrai balance du challenge
-                balance = (account_information['balance'] * 5) / 100
-                if 'Eightcap' in account_information['broker']:
-                    if(multiplier == 10):
-                        trade['Symbol'] = trade['Symbol']+".b"
-                    elif(trade['Symbol'] in FOREX):
-                        trade['Symbol'] = trade['Symbol']+".i"
-                    #logger.info(trade['Symbol'])
-            else:
-                balance = account_information['balance']
-
-                if 'Exness' in account_information['broker']:
-                    if 'Standard'.lower() in account_information['name'].lower():
-                        trade['Symbol'] = trade['Symbol']+"m"
-                        #logger.info(trade['Symbol'])
-                    elif 'ZeroSpread'.lower() in account_information['name'].lower():
-                        trade['Symbol'] = trade['Symbol']+"z"
-                        #logger.info(trade['Symbol'])
-                    #else:
-                        #trade['Symbol'] = trade['Symbol']
-                        #logger.info(trade['Symbol'])
-
+        #if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
+        if 'Trial'.lower() in account_information['name'].lower() or 'Eva'.lower() in account_information['name'].lower():
+            # Calculer la vrai balance du challenge
+            balance = (account_information['balance'] * 5) / 100
         else:
             balance = account_information['balance']
-            if 'AXSE Brokerage' in account_information['broker']:
-                trade['Symbol'] = trade['Symbol']+"_raw"
+
+        if 'Eightcap' in account_information['broker']:
+            if(multiplier == 10):
+                trade['Symbol'] = trade['Symbol']+".b"
+            elif(trade['Symbol'] in FOREX):
+                trade['Symbol'] = trade['Symbol']+".i"
+            #logger.info(trade['Symbol'])
+
+        elif 'exness' in account_information['broker'].lower():
+            if 'Standard'.lower() in account_information['name'].lower():
+                trade['Symbol'] = trade['Symbol']+"m"
                 #logger.info(trade['Symbol'])
+            elif 'ZeroSpread'.lower() in account_information['name'].lower():
+                trade['Symbol'] = trade['Symbol']+"z"
+                #logger.info(trade['Symbol'])
+            #else:
+                #trade['Symbol'] = trade['Symbol']
+                #logger.info(trade['Symbol'])
+
+        elif 'xm global' in account_information['broker'].lower():
+            if trade['Symbol'] == 'XAUUSD':
+                trade['Symbol'] = 'GOLD'
+                #logger.info(trade['Symbol'])
+                
+        elif 'AXSE Brokerage' in account_information['broker']:
+            trade['Symbol'] = trade['Symbol']+"_raw"
+            #logger.info(trade['Symbol'])
 
 
 
