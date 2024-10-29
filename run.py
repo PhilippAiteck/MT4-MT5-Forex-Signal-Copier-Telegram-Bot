@@ -813,11 +813,13 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
         # Symbols editing
         #if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
-        if 'Trial'.lower() in account_information['name'].lower() or 'Eva'.lower() in account_information['name'].lower():
+        #if 'Trial'.lower() in account_information['name'].lower() or 'Eva'.lower() in account_information['name'].lower():
             # Calculer la vrai balance du challenge
-            balance = (account_information['balance'] * 5) / 100
-        else:
-            balance = account_information['balance']
+            #balance = (account_information['balance'] * 5) / 100
+        #else:
+            #balance = account_information['balance']
+
+        balance = account_information['balance']
 
         if 'Eightcap' in account_information['broker']:
             if(multiplier == 10):
