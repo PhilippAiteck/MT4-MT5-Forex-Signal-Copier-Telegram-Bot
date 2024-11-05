@@ -254,14 +254,48 @@ def ParseSignal(signal: str) -> dict:
                     trade['RiskFactor'] = RISK_FACTOR
 
 
-            #elif('gold' in signal[0].lower()):
-            #    trade['Symbol'] = (signal[0].split())[1]
-            #    trade['Entry'] = float((signal[0].split('-'))[1])
-            #    trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
-            #    trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
-            #    trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
-                
-            #    trade['RiskFactor'] = RISK_FACTOR
+            elif('-' in signal[0].lower()):
+                trade['Symbol'] = (signal[0].split())[1]
+                trade['Entry'] = (signal[0].split('@'))[-1]
+                trade['Entry'] = [float((trade['Entry'].split('-'))[0])]
+                trade['Entry'].append(float((signal[0].split('-'))[-1]))
+
+                order_limits_spacing = 0.5
+                order_limits = []  # Liste pour stocker les niveaux d'ordre Limit
+                current_price = trade["Entry"][0]
+                # Création des niveaux d'ordre Limit
+                if trade['OrderType'] == 'Buy':
+                    trade['OrderType'] = 'Buy Limits'
+                    while current_price >= trade["Entry"][1]:
+                        order_limits.append(current_price)
+                        current_price -= order_limits_spacing
+                else:
+                    trade['OrderType'] = 'Sell Limits'
+                    while current_price <= trade["Entry"][1]:
+                        order_limits.append(current_price)
+                        current_price += order_limits_spacing
+
+                trade["Entry"] = order_limits
+                trade['StopLoss'] = float((signal[2].replace(' ','').split(':'))[-1])
+                trade['TP'] = [float((signal[4].replace(' ','').split(':'))[-1])]
+                trade['TP'].append(float((signal[5].replace(' ','').split(':'))[-1]))
+
+                take_profits = []
+                # Les 4 premiers ordre limits pour TP1
+                for i in range(4):
+                    take_profits.append(trade['TP'][0])
+                # Les 3 suivants pour TP2
+                for i in range(4, 7):
+                    take_profits.append(trade['TP'][1])
+                # Les 2 derniers n'ont pas de TP
+                for i in range(7, 9):
+                    if 'Buy' in trade['OrderType']:
+                        take_profits.append(trade['TP'][1]+11)
+                    else:
+                        take_profits.append(trade['TP'][1]-11)
+
+                trade['TP'] = take_profits
+                trade['RiskFactor'] = float((signal[7].split())[-1])
 
 
             elif('TP'.lower() in signal[1].lower() or 'TP'.lower() in signal[2].lower()):
@@ -361,14 +395,75 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
         currency: currency of the MetaTrader account
     """
 
+    # convertion xof_to_usd
+    if currency == 'XOF':
+        #if(balance <= 30228):
+        #    trade['PositionSize'] = 0.01
+        #else:
+        # Conversion de XOF en USD
+        amount_usd = xof_to_usd(balance)
+        balance = amount_usd
+
     # pips calculation
     takeProfitPips = []
-        
-    # calculates the stop loss in pips
-    stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
-    
-    #logger.info(stopLossPips)
+    pips_tp1 = []
+    pips_tp2 = []
+    pips_tp3 = []
+            
 
+    #logger.info(trade['Entry'])
+    #logger.info(trade['TP'])
+
+        
+    # calculates the stop loss and take profit in pips
+    if ('Limits' in trade['OrderType']):
+        stopLossPips = []
+        logger.info(trade['Entry'])
+
+        for order_limit in trade['Entry']:
+            # Le montant à risquer sur chaque trade doit être proportionnel à cette distance
+            stopLossPips.append(abs(round((trade['StopLoss'] - order_limit) / multiplier)))
+
+        logger.info(stopLossPips)
+
+        for order_limit in trade['Entry'][:4]:
+            # calculates the take profit(s) in pips
+            takeProfitPips.append(abs(round((trade['TP'][0] - order_limit) / multiplier)))
+        for order_limit in trade['Entry'][4:7]:
+            # calculates the take profit(s) in pips
+            takeProfitPips.append(abs(round((trade['TP'][4] - order_limit) / multiplier)))
+        for order_limit in trade['Entry'][7:]:
+            # calculates the take profit(s) in pips
+            takeProfitPips.append(abs(round((trade['TP'][7] - order_limit) / multiplier)))
+
+        logger.info(takeProfitPips)
+
+        # Calcul des pips pour TP1
+        pips_tp1 = takeProfitPips[:4]
+
+        # Calcul des pips pour TP2
+        pips_tp2 = takeProfitPips[4:7]
+
+        # Calcul des pips pour TP3
+        pips_tp3 = takeProfitPips[7:]
+            
+        logger.info(pips_tp1)
+        logger.info(pips_tp2)
+        logger.info(pips_tp3)
+
+    else:
+        stopLossPips = abs(round((trade['StopLoss'] - trade['Entry']) / multiplier))
+
+        logger.info(stopLossPips)
+
+        # calculates the take profit(s) in pips
+        for takeProfit in trade['TP']:
+            takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
+
+        logger.info(takeProfitPips)
+
+    
+    # calculates the position size
     if(trade['OrderType'] == 'ACHAT' or trade['OrderType'] == 'VENTE'):
         if currency == 'XOF':
             if(balance <= 301571):
@@ -428,27 +523,23 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
                 trade['PositionSize'] = 0.42
 
 
-    else:
-        if currency == 'XOF':
-            #if(balance <= 30228):
-            #    trade['PositionSize'] = 0.01
-            #else:
-            # Conversion de XOF en USD
-            amount_usd = xof_to_usd(balance)
-            balance = amount_usd
+    elif 'Limits' in trade['OrderType']:
+        trade['PositionSize'] = []
+        for order_limit_stopLossPips in stopLossPips:
+            # calculates the position size using stop loss and RISK FACTOR
+            trade['order_limits_positionsize'] = math.floor((((balance * trade['RiskFactor']) / len(trade['Entry'])) / order_limit_stopLossPips) / 10 * 100) / 100
+            # Le montant à risquer sur chaque trade doit être proportionnel à cette distance
+            trade['PositionSize'].append(trade['order_limits_positionsize'])
+        logger.info(trade['PositionSize'])
 
+    else:
         # calculates the position size using stop loss and RISK FACTOR
         trade['PositionSize'] = math.floor(((balance * trade['RiskFactor']) / stopLossPips) / 10 * 100) / 100
 
-    # calculates the take profit(s) in pips
-    for takeProfit in trade['TP']:
-        takeProfitPips.append(abs(round((takeProfit - trade['Entry']) / multiplier)))
 
-    #logger.info(takeProfitPips)
-
-    if(trade['OrderType'] != 'ACHAT' and trade['OrderType'] != 'VENTE'):
+    if(trade['OrderType'] != 'ACHAT' and trade['OrderType'] != 'VENTE' ):
         # creates table with trade information
-        table = CreateTable(trade, balance, stopLossPips, takeProfitPips)
+        table = CreateTable(trade, balance, stopLossPips, takeProfitPips, pips_tp1, pips_tp2, pips_tp3)
         
         # sends user trade information and calcualted risk
         update.effective_message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
@@ -456,7 +547,8 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
 
     return
 
-def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: int) -> PrettyTable:
+
+def CreateTable(trade: dict, balance: float, stopLossPips, takeProfitPips, pips_tp1: dict, pips_tp2: dict, pips_tp3: dict) -> PrettyTable:
     """Creates PrettyTable object to display trade information to user.
 
     Arguments:
@@ -477,33 +569,88 @@ def CreateTable(trade: dict, balance: float, stopLossPips: int, takeProfitPips: 
     table.align["Value"] = "l" 
 
     table.add_row([trade["OrderType"] , trade["Symbol"]])
-    table.add_row(['Entry\n', trade['Entry']])
 
-    table.add_row(['Stop Loss', '{} pips'.format(stopLossPips)])
+    if 'Limits' in trade["OrderType"]:
+        table.add_row(['Entry\n', trade['Entry'][0]])
+        table.add_row(['Stop Loss', '{} pips'.format(sum(stopLossPips))])
 
-    for count, takeProfit in enumerate(takeProfitPips):
-        table.add_row([f'TP {count + 1}', f'{takeProfit} pips'])
+        # Affichage des résultats pour TP1
+        #table.add_row('\nOrdre Limits avec TP1:')        
+        for i, entry_price in enumerate(trade['Entry'][:4]):
+            table.add_row([f'Ordre Limit à {entry_price}: TP1 =', f'{pips_tp1[i]} pips'])
 
-    table.add_row(['\nRisk Factor', '\n{:,.0f} %'.format(trade['RiskFactor'] * 100)])
-    table.add_row(['Position Size', trade['PositionSize']])
-    
-    table.add_row(['\nCurrent Balance', '\n$ {:,.2f}'.format(balance)])
-    table.add_row(['Potential Loss', '$ {:,.2f}'.format(round((trade['PositionSize'] * 10) * stopLossPips, 2))])
+        # Affichage des résultats pour TP2
+        #table.add_row("\nOrdre Limits avec TP2:")
+        for i, entry_price in enumerate(trade['Entry'][4:7]):
+            table.add_row([f'Ordre Limit à {entry_price}: TP2 =', f'{pips_tp2[i]} pips'])
+
+        # Affichage des résultats pour TP3
+        #table.add_row("\nOrdre Limits avec TP3:")
+        for i, entry_price in enumerate(trade['Entry'][7:]):
+            table.add_row([f'Ordre Limit à {entry_price}: TP3 =', f'{pips_tp3[i]} pips'])
+
+        table.add_row(['\nRisk Factor', '\n{:,.0f} %'.format(trade['RiskFactor'] * 100)])
+        table.add_row(['Position Size', sum(trade['PositionSize'])])
+        
+        table.add_row(['\nCurrent Balance', '\n$ {:,.2f}'.format(balance)])
+        table.add_row(['Potential Loss', '$ {:,.2f}'.format(round(sum([(position_size * 10) * stopLossPips[i] for i, position_size in enumerate(trade['PositionSize'])]), 2))])
+
+    else:
+        table.add_row(['Entry\n', trade['Entry']])
+
+        table.add_row(['Stop Loss', '{} pips'.format(stopLossPips)])
+
+        for count, takeProfit in enumerate(takeProfitPips):
+            table.add_row([f'TP {count + 1}', f'{takeProfit} pips'])
+
+        table.add_row(['\nRisk Factor', '\n{:,.0f} %'.format(trade['RiskFactor'] * 100)])
+        table.add_row(['Position Size', trade['PositionSize']])
+
+        table.add_row(['\nCurrent Balance', '\n$ {:,.2f}'.format(balance)])
+        table.add_row(['Potential Loss', '$ {:,.2f}'.format(round((trade['PositionSize'] * 10) * stopLossPips, 2))])
+
 
     # total potential profit from trade
     totalProfit = 0
+    if 'Limits' in trade["OrderType"]:
+        for count, pip_tp1 in enumerate(pips_tp1):
+            profit = round((trade['PositionSize'][:4][count] * 10 * (1 / len(pips_tp1))) * pip_tp1, 2)
+            table.add_row([f'TP1 Profit', '$ {:,.2f}'.format(profit)])
+            
+            # sums potential profit from each take profit target
+            totalProfit += profit
 
-    for count, takeProfit in enumerate(takeProfitPips):
-        profit = round((trade['PositionSize'] * 10 * (1 / len(takeProfitPips))) * takeProfit, 2)
-        table.add_row([f'TP {count + 1} Profit', '$ {:,.2f}'.format(profit)])
-        
-        # sums potential profit from each take profit target
-        totalProfit += profit
+        #table.add_row(['\nTotal Profit TP1', '\n$ {:,.2f}'.format(totalProfit)])
 
-    table.add_row(['\nTotal Profit', '\n$ {:,.2f}'.format(totalProfit)])
+        for count, pip_tp2 in enumerate(pips_tp2):
+            profit = round((trade['PositionSize'][4:7][count] * 10 * (1 / len(pips_tp2))) * pip_tp2, 2)
+            table.add_row([f'TP2 Profit', '$ {:,.2f}'.format(profit)])
+            
+            # sums potential profit from each take profit target
+            totalProfit += profit
+
+        #table.add_row(['\nTotal Profit TP2', '\n$ {:,.2f}'.format(totalProfit)])
+
+        for count, pip_tp3 in enumerate(pips_tp3):
+            profit = round((trade['PositionSize'][7:][count] * 10 * (1 / len(pips_tp3))) * pip_tp3, 2)
+            table.add_row([f'TP3 Profit', '$ {:,.2f}'.format(profit)])
+            
+            # sums potential profit from each take profit target
+            totalProfit += profit
+
+        table.add_row(['\nTotal Profit TP', '\n$ {:,.2f}'.format(totalProfit)])
+
+    else:
+        for count, takeProfit in enumerate(takeProfitPips):
+            profit = round((trade['PositionSize'] * 10 * (1 / len(takeProfitPips))) * takeProfit, 2)
+            table.add_row([f'TP {count + 1} Profit', '$ {:,.2f}'.format(profit)])
+            
+            # sums potential profit from each take profit target
+            totalProfit += profit
+
+        table.add_row(['\nTotal Profit', '\n$ {:,.2f}'.format(totalProfit)])
 
     return table
-
 
 
 async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dict, trade_id, signalInfos_converted) -> None:
@@ -810,19 +957,16 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
             multiplier = 0.0001
 
 
-
         # Symbols editing
         #if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
-        #if 'Trial'.lower() in account_information['name'].lower() or 'Eva'.lower() in account_information['name'].lower():
+        if 'Trial'.lower() in account_information['name'].lower() or 'Evak'.lower() in account_information['name'].lower():
             # Calculer la vrai balance du challenge
-            #balance = (account_information['balance'] * 5) / 100
-        #else:
-            #balance = account_information['balance']
-
-        balance = account_information['balance']
+            balance = (account_information['balance'] * 5) / 100
+        else:
+            balance = account_information['balance']
 
         if 'Eightcap' in account_information['broker']:
-            if(multiplier == 10):
+            if(multiplier == 1):
                 trade['Symbol'] = trade['Symbol']+".b"
             elif(trade['Symbol'] in FOREX):
                 trade['Symbol'] = trade['Symbol']+".i"
@@ -849,19 +993,18 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
             #logger.info(trade['Symbol'])
 
 
-
         # checks if the order is a market execution to get the current price of symbol
-        #if(trade['Entry'] == 'NOW' or '-' in trade['Entry']):
-        #price = connection.terminal_state.price(symbol=trade['Symbol'])
-        price = await connection.get_symbol_price(symbol=trade['Symbol'])
+        if('Limit' not in trade['OrderType'] or 'Stop' not in trade['OrderType'] or 'Limits' not in trade['OrderType']):
+            #price = connection.terminal_state.price(symbol=trade['Symbol'])
+            price = await connection.get_symbol_price(symbol=trade['Symbol'])
 
-        # uses bid price if the order type is a buy
-        if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
-            trade['Entry'] = float(price['bid'])
+            # uses bid price if the order type is a buy
+            if(trade['OrderType'] == 'Buy' or trade['OrderType'] == 'ACHAT'):
+                trade['Entry'] = float(price['bid'])
 
-        # uses ask price if the order type is a sell
-        if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
-            trade['Entry'] = float(price['ask'])
+            # uses ask price if the order type is a sell
+            if(trade['OrderType'] == 'Sell' or trade['OrderType'] == 'VENTE'):
+                trade['Entry'] = float(price['ask'])
 
 
         # produces a table with trade information
@@ -889,6 +1032,12 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
                         result = await connection.create_limit_buy_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['Entry'], trade['StopLoss'], takeProfit)
                         tradeid.append(result['orderId'])
 
+                # executes buy Limits order
+                elif(trade['OrderType'] == 'Buy Limits'):
+                    for i in range(len(trade['Entry'])):
+                        result = await connection.create_limit_buy_order(trade['Symbol'], trade['PositionSize'][i], trade['Entry'][i], trade['StopLoss'], trade['TP'][i])
+                        tradeid.append(result['orderId'])
+
                 # executes buy stop order
                 elif(trade['OrderType'] == 'Buy Stop'):
                     for takeProfit in trade['TP']:
@@ -905,6 +1054,12 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
                 elif(trade['OrderType'] == 'Sell Limit'):
                     for takeProfit in trade['TP']:
                         result = await connection.create_limit_sell_order(trade['Symbol'], round(trade['PositionSize'] / len(trade['TP']), 2), trade['Entry'], trade['StopLoss'], takeProfit)
+                        tradeid.append(result['orderId'])
+
+                # executes sell Limits order
+                elif(trade['OrderType'] == 'Sell Limits'):
+                    for i in range(len(trade['Entry'])):
+                        result = await connection.create_limit_sell_order(trade['Symbol'], trade['PositionSize'][i], trade['Entry'][i], trade['StopLoss'], trade['TP'][i])
                         tradeid.append(result['orderId'])
 
                 # executes sell stop order
