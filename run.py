@@ -185,13 +185,13 @@ def ParseSignal(signal: str) -> dict:
         elif('buy' in signal[0].lower()):
             trade['OrderType'] = 'Buy'
 
-        elif('achat' in signal[0].lower()):
+        elif('achète' in signal[0].lower()):
             trade['OrderType'] = 'ACHAT'
         
         elif('sell' in signal[0].lower()):
             trade['OrderType'] = 'Sell'
 
-        elif('vente' in signal[0].lower()):
+        elif('vends' in signal[0].lower()):
             trade['OrderType'] = 'VENTE'
         
         # returns an empty dictionary if an invalid order type was given
@@ -211,7 +211,7 @@ def ParseSignal(signal: str) -> dict:
             trade['Symbol'] = (signal[0].split())[-1]
             if('(' in trade['Symbol'] or ')' in trade['Symbol']):
                 trade['Symbol'] = (signal[0].split())[-2]
-            trade['Symbol'] = trade['Symbol'].replace('/','')
+            #trade['Symbol'] = trade['Symbol'].replace('/','')
             #trade['Symbol'] = trade['Symbol']+"m"
             trade['Entry'] = (signal[2].split(' : '))[-1].replace(' ','')
             trade['Entry'] = float((trade['Entry'].split('-'))[0])
@@ -220,17 +220,17 @@ def ParseSignal(signal: str) -> dict:
             #trade['TP'] = [0, 0, 0]
 
             if(trade['OrderType'] == 'ACHAT'):
-                if(len(signal) > 7 and 'TP1'.lower() in signal[4].lower()):
-                    trade['TP'] = [float(signal[4].split(' : ')[-1].replace(' ','')), float(signal[5].split(':')[-1].replace(' ','')), trade['Entry'] + 3000]
-                    trade['StopLoss'] = float((signal[8].replace(' ','').split(':'))[-1])
+                if(len(signal) > 7 and 'TP1'.lower() in signal[6].lower()):
+                    trade['TP'] = [float(signal[6].split(' : ')[-1].replace(' ','')), float(signal[7].split(':')[-1].replace(' ','')), trade['Entry'] + 3000]
+                    trade['StopLoss'] = float((signal[10].replace('🔒','').replace(' ','').split(':'))[-1])
                 else:
                     trade['TP'] = [trade['Entry'] + 600, trade['Entry'] + 1200, trade['Entry'] + 3000]
                     trade['StopLoss'] = float((signal[6].replace('🔒','').replace(' ','').split(':'))[-1])
 
             if(trade['OrderType'] == 'VENTE'):
-                if(len(signal) > 7 and 'TP1'.lower() in signal[4].lower()):
-                    trade['TP'] = [float(signal[4].split(' : ')[-1].replace(' ','')), float(signal[5].split(':')[-1].replace(' ','')), trade['Entry'] - 3000]
-                    trade['StopLoss'] = float((signal[8].replace(' ','').split(':'))[-1])
+                if(len(signal) > 7 and 'TP1'.lower() in signal[6].lower()):
+                    trade['TP'] = [float(signal[6].split(' : ')[-1].replace(' ','')), float(signal[7].split(':')[-1].replace(' ','')), trade['Entry'] + 3000]
+                    trade['StopLoss'] = float((signal[10].replace('🔒','').replace(' ','').split(':'))[-1])
                 else:
                     trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
                     trade['StopLoss'] = float((signal[6].replace('🔒','').replace(' ','').split(':'))[-1])
@@ -547,7 +547,6 @@ def GetTradeInformation(update: Update, trade: dict, balance: float, currency: s
 
     return
 
-
 def CreateTable(trade: dict, balance: float, stopLossPips, takeProfitPips, pips_tp1: dict, pips_tp2: dict, pips_tp3: dict) -> PrettyTable:
     """Creates PrettyTable object to display trade information to user.
 
@@ -651,6 +650,7 @@ def CreateTable(trade: dict, balance: float, stopLossPips, takeProfitPips, pips_
         table.add_row(['\nTotal Profit', '\n$ {:,.2f}'.format(totalProfit)])
 
     return table
+
 
 
 async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dict, trade_id, signalInfos_converted) -> None:
@@ -968,6 +968,15 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
         else:
             balance = account_information['balance']
 
+        #if 'Competition' in account_information['name']:
+            #if(trade['PositionSize'] > 3):
+                #trade['PositionSize'] = 3
+                #if(trade['PositionSize'] > 3):
+                    #trade['PositionSize'] = 3
+            #elif(trade['Symbol'] in FOREX):
+                #trade['Symbol'] = trade['Symbol']+".i"
+            #logger.info(trade['Symbol'])
+
         if 'Eightcap' in account_information['broker']:
             if(multiplier == 1):
                 trade['Symbol'] = trade['Symbol']+".b"
@@ -1174,30 +1183,31 @@ async def ConnectGetTradeHistory(update: Update, context: CallbackContext) -> No
     api = MetaApi(API_KEY)
 
     try:
-        account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
-        initial_state = account.state
-        deployed_states = ['DEPLOYING', 'DEPLOYED']
+        # account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
+        # initial_state = account.state
+        # deployed_states = ['DEPLOYING', 'DEPLOYED']
 
-        if initial_state not in deployed_states:
-            # Wait until account is deployed and connected to broker
-            logger.info('Deploying account')
-            await account.deploy()
+        # if initial_state not in deployed_states:
+        #     # Wait until account is deployed and connected to broker
+        #     logger.info('Deploying account')
+        #     await account.deploy()
 
-        logger.info('Waiting for API server to connect to broker ...')
-        await account.wait_connected()
+        # logger.info('Waiting for API server to connect to broker ...')
+        # await account.wait_connected()
 
-        # Connect to MetaApi API
-        connection = account.get_rpc_connection()
-        await connection.connect()
+        # # Connect to MetaApi API
+        # connection = account.get_rpc_connection()
+        # await connection.connect()
 
-        # Wait until terminal state synchronized to the local state
-        logger.info('Waiting for SDK to synchronize to terminal state ...')
-        await connection.wait_synchronized()
+        # # Wait until terminal state synchronized to the local state
+        # logger.info('Waiting for SDK to synchronize to terminal state ...')
+        # await connection.wait_synchronized()
 
         # Fetch historical trades
-        deals = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
-        history = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
-        #history = json.loads(history_response['response'])['historyOrders']
+        #deals_response = await connection.get_deals_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+
+        #historyOrders = await connection.get_history_orders_by_time_range(datetime.now() - timedelta(days=30), datetime.now())
+        history = [{"id":"89917163","platform":"mt5","type":"ORDER_TYPE_BUY_LIMIT","state":"ORDER_STATE_FILLED","symbol":"GBPJPY","magic":0,"time":"2024-06-12T16:43:08.835Z","brokerTime":"2024-06-12 16:43:08.835","openPrice":200.072,"volume":0.16,"currentVolume":0,"positionId":"89917163","doneTime":"2024-06-12T17:31:11.430Z","doneBrokerTime":"2024-06-12 17:31:11.430","reason":"ORDER_REASON_EXPERT","fillingMode":"ORDER_FILLING_RETURN","expirationType":"ORDER_TIME_GTC","stopLoss":199.931,"takeProfit":200.581,"accountCurrencyExchangeRate":1},{"id":"90661456","platform":"mt5","type":"ORDER_TYPE_BUY_LIMIT","state":"ORDER_STATE_FILLED","symbol":"BTCUSD","magic":0,"time":"2024-06-14T19:07:13.833Z","brokerTime":"2024-06-14 19:07:13.833","openPrice":65310.86,"volume":0.04,"currentVolume":0,"positionId":"90661456","doneTime":"2024-06-14T19:14:56.329Z","doneBrokerTime":"2024-06-14 19:14:56.329","reason":"ORDER_REASON_EXPERT","fillingMode":"ORDER_FILLING_RETURN","expirationType":"ORDER_TIME_GTC","stopLoss":65028.96,"takeProfit":66750.99,"accountCurrencyExchangeRate":1},{"id":"90679330","platform":"mt5","type":"ORDER_TYPE_SELL","state":"ORDER_STATE_FILLED","symbol":"BTCUSD","magic":0,"time":"2024-06-14T21:36:13.742Z","brokerTime":"2024-06-14 21:36:13.742","openPrice":66315.6,"volume":0.04,"currentVolume":0,"positionId":"90661455","doneTime":"2024-06-14T21:36:13.744Z","doneBrokerTime":"2024-06-14 21:36:13.744","reason":"ORDER_REASON_TP","fillingMode":"ORDER_FILLING_IOC","expirationType":"ORDER_TIME_GTC","brokerComment":"[tp 66315.60]","accountCurrencyExchangeRate":1}]
         logger.info(history)
 
         # Update Excel file with the retrieved data
@@ -1579,7 +1589,7 @@ def handle_message(update: Update, context: CallbackContext):
         #     }
         # else:
             regex_functions = {
-                    r"\bBTC/USD\b": PlaceTrade, # message handler for entering trade
+                    r"\bBTCUSD\b": PlaceTrade, # message handler for entering trade
                     r"\bFermez le trade\b": TakeProfitTrade, # message handler for Take Profit the last one        
 
                     r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
@@ -1662,7 +1672,7 @@ def update_excel_file(history):
                 'N/A',  # tradeCount (if available, otherwise N/A)
                 datetime.strptime(trade.get('time', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S') if trade.get('time') else 'N/A',  # entryDateTime
                 datetime.strptime(trade.get('doneTime', 'N/A'), '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%Y-%m-%d %H:%M:%S') if trade.get('doneTime') else 'N/A',  # exitDateTime
-                #'N/A'   # accProfit (if available, otherwise N/A)
+                'N/A'   # accProfit (if available, otherwise N/A)
             ]
             ws.append(trade_info)
         else:
