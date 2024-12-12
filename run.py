@@ -107,19 +107,19 @@ def ParseSignal(signal: str) -> dict:
             trade['newstop'] = float(((signal[0].split())[1]))
             trade['new_sl'] = ''
             trade['new_tp'] = ''
-            if len(signal[0].split()) == 5:
+            if len(signal[0].split()) == 4:
                 trade['trade_id'] = ''
-                trade['ordertype'] = (signal[0].split())[3]
-                trade['symbol'] = (signal[0].split())[4]
-            elif len(signal[0].split()) == 4:
-                if (signal[0].split())[3] == 'BUY' or (signal[0].split())[3] == 'SELL':
+                trade['ordertype'] = (signal[0].split())[2]
+                trade['symbol'] = (signal[0].split())[3]
+            elif len(signal[0].split()) == 3:
+                if (signal[0].split())[2] == 'BUY' or (signal[0].split())[2] == 'SELL':
                     trade['trade_id'] = ''
-                    trade['ordertype'] = (signal[0].split())[3]
+                    trade['ordertype'] = (signal[0].split())[2]
                     trade['symbol'] = ''
                 else:
                     trade['trade_id'] = ''
                     trade['ordertype'] = ''
-                    trade['symbol'] = (signal[0].split())[3]
+                    trade['symbol'] = (signal[0].split())[2]
             else:
                 trade['trade_id'] = ''
                 trade['symbol'] = ''
@@ -229,7 +229,7 @@ def ParseSignal(signal: str) -> dict:
 
             if(trade['OrderType'] == 'VENTE'):
                 if(len(signal) > 7 and 'TP1'.lower() in signal[6].lower()):
-                    trade['TP'] = [float(signal[6].split(' : ')[-1].replace(' ','')), float(signal[7].split(':')[-1].replace(' ','')), trade['Entry'] + 3000]
+                    trade['TP'] = [float(signal[6].split(' : ')[-1].replace(' ','')), float(signal[7].split(':')[-1].replace(' ','')), trade['Entry'] - 3000]
                     trade['StopLoss'] = float((signal[10].replace('🔒','').replace(' ','').split(':'))[-1])
                 else:
                     trade['TP'] = [trade['Entry'] - 600, trade['Entry'] - 1200, trade['Entry'] - 3000]
@@ -786,14 +786,8 @@ async def ConnectCloseTrade(update: Update, context: CallbackContext, trade: dic
 
 
 async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict, signalInfos_converted):
-    """Edit Stop ongoing trades.
-
-    Arguments:
-        update: update from Telegram
-    """
-
+    """Edit Stop ongoing trades with spread consideration."""
     api = MetaApi(API_KEY)
-    #messageid = update.effective_message.reply_to_message.message_id
 
     try:
         account = await api.metatrader_account_api.get_account(ACCOUNT_ID)
@@ -801,96 +795,125 @@ async def ConnectEditTrade(update: Update, context: CallbackContext, trade: dict
         deployed_states = ['DEPLOYING', 'DEPLOYED']
 
         if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
             logger.info('Deploying account')
             await account.deploy()
 
         logger.info('Waiting for API server to connect to broker ...')
         await account.wait_connected()
 
-        # connect to MetaApi API
         connection = account.get_rpc_connection()
         await connection.connect()
-
-        # wait until terminal state synchronized to the local state
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        # # Récupérer la connexion à partir du contexte de l'application
-        # connection = context.bot_data['mt_streaming_connection']
-        # update.effective_message.reply_text(f"CONNECTION: {connection}")
-
-        # obtains account information from MetaTrader server
-        #account_information = await connection.get_account_information()
-
-        #logger.info(update.effective_message)
-        #logger.info(update.effective_message.reply_to_message)
-        #logger.info(update.effective_message.reply_to_message.message_id)
-
         if update.effective_message.reply_to_message is None:
-            if('BE' in update.effective_message.text):
+            if 'BE' in update.effective_message.text:
+                # Gérer la position spécifique pour un "BreakEven"
                 position = await connection.get_position(trade['trade_id'])
-                # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {position['type']} {position['symbol']}.")
+
+                # Récupérer le spread pour ajuster le niveau de breakeven
+                market_data = await connection.get_symbol_price(position['symbol'])
+                spread = market_data['ask'] - market_data['bid']
+                adjusted_stop_loss = (
+                    position['openPrice'] + spread if position['type'] == 'POSITION_TYPE_BUY' else position['openPrice'] - spread
+                )
+
+                # Mettre à jour la position
+                await connection.modify_position(
+                    position['id'], stop_loss=adjusted_stop_loss, take_profit=position['takeProfit']
+                )
+                update.effective_message.reply_text(
+                    f"BreakEven ajusté pour {position['id']} ({position['symbol']}) avec spread : {spread:.5f}."
+                )
             else:
-                #positions = connection.terminal_state.positions
+                # Gérer toutes les positions selon le cas spécifié
                 positions = await connection.get_positions()
-                #logger.info(positions)
-                # On vérifie si le symbol est spécifié
+
                 for position in positions:
-                    if (not trade['symbol'] and not trade['ordertype']) \
-                        or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
-                        or (not trade['symbol'] and position['type'].endswith(trade['ordertype'])) \
-                        or (not trade['ordertype'] and position['symbol'] == trade['symbol']):
-                        
-                        if('BRV' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau du prix d'entré
-                            await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"BreakEven défini pour {position['id']} > {trade['ordertype']} {position['symbol']}.")
-                        elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
-                            await connection.modify_position(position['id'], stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
-                            update.effective_message.reply_text(f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour la position {position['id']}.")
-                        elif('SL' in update.effective_message.text):
-                            # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
-                            await connection.modify_position(position['id'], stop_loss=trade['newstop'], take_profit=position['takeProfit'])
-                            update.effective_message.reply_text(f"StopLoss: {trade['newstop']} défini pour la position {position['id']}.")
-                        elif('TP' in update.effective_message.text):
-                            # Mettre à jour le take-profit pour qu'il soit égal au niveau voulu
-                            await connection.modify_position(position['id'], stop_loss=position['stopLoss'], take_profit=trade['newstop'])
-                            update.effective_message.reply_text(f"TakeProfit: {trade['newstop']} défini pour la position {position['id']}.")
-                                   
-                # else:
-                #     await connection.modify_position(position['id'], stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                #     update.effective_message.reply_text(f"BreakEven défini pour toutes les positions.")
+                    # Vérifier les critères de correspondance de `symbol` et `ordertype`
+                    if (
+                        (not trade['symbol'] and not trade['ordertype'])
+                        or (position['symbol'] == trade['symbol'] and position['type'].endswith(trade['ordertype']))
+                        or (not trade['symbol'] and position['type'].endswith(trade['ordertype']))
+                        or (not trade['ordertype'] and position['symbol'] == trade['symbol'])
+                    ):
+                        market_data = await connection.get_symbol_price(position['symbol'])
+                        spread = market_data['ask'] - market_data['bid']
+
+                        if 'BRV' in update.effective_message.text:  # BreakEven
+                            adjusted_stop_loss = (
+                                position['openPrice'] + spread
+                                if position['type'] == 'POSITION_TYPE_BUY'
+                                else position['openPrice'] - spread
+                            )
+                            await connection.modify_position(
+                                position['id'], stop_loss=adjusted_stop_loss, take_profit=position['takeProfit']
+                            )
+                            update.effective_message.reply_text(
+                                f"BreakEven ajusté pour {position['id']} ({position['symbol']}) avec spread : {spread:.5f}."
+                            )
+                        elif 'SL' in update.effective_message.text and 'TP' in update.effective_message.text:
+                            await connection.modify_position(
+                                position['id'], stop_loss=trade['new_sl'], take_profit=trade['new_tp']
+                            )
+                            update.effective_message.reply_text(
+                                f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour {position['id']}."
+                            )
+                        elif 'SL' in update.effective_message.text:
+                            await connection.modify_position(
+                                position['id'], stop_loss=trade['newstop'], take_profit=position['takeProfit']
+                            )
+                            update.effective_message.reply_text(
+                                f"StopLoss: {trade['newstop']} défini pour {position['id']}."
+                            )
+                        elif 'TP' in update.effective_message.text:
+                            await connection.modify_position(
+                                position['id'], stop_loss=position['stopLoss'], take_profit=trade['newstop']
+                            )
+                            update.effective_message.reply_text(
+                                f"TakeProfit: {trade['newstop']} défini pour {position['id']}."
+                            )
         else:
             messageid = update.effective_message.reply_to_message.message_id
-            # Appliquez le nouveau Stop Loss sur toutes les positions de la liste
             for position_id in signalInfos_converted[messageid]:
-                # Récupérez la position
                 position = await connection.get_position(position_id)
                 if position is not None:
-                    #opening_price = position['openPrice']
-                    #takeprofit = position['takeProfit']
-                    #stoploss = position['stopLoss']
-                    # Mettre à jour le stop-loss pour qu'il soit égal au niveau de breakeven
-                    if('BRV' in update.effective_message.text):
-                        await connection.modify_position(position_id, stop_loss=position['openPrice'], take_profit=position['takeProfit'])
-                        update.effective_message.reply_text(f"BreakEven défini pour la position {position_id}.")
-                    elif('SL' in update.effective_message.text and 'TP' in update.effective_message.text):
-                        # Mettre à jour le stop-loss pour qu'il soit égal au niveau voulu
-                        await connection.modify_position(position_id, stop_loss=trade['new_sl'], take_profit=trade['new_tp'])
-                        update.effective_message.reply_text(f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour la position {position_id}.")
-                    elif('SL' in update.effective_message.text):
-                        # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                        await connection.modify_position(position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit'])
-                        update.effective_message.reply_text(f"StopLoss: {trade['newstop']} défini pour la position {position_id}.")
-                    elif('TP' in update.effective_message.text):
-                        # Mettre à jour le stop-loss pour qu'il soit égal au stoploss voulu
-                        await connection.modify_position(position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop'])
-                        update.effective_message.reply_text(f"TakeProfit: {trade['newstop']} défini pour la position {position_id}.")
-        
+                    market_data = await connection.get_symbol_price(position['symbol'])
+                    spread = market_data['ask'] - market_data['bid']
+
+                    if 'BRV' in update.effective_message.text:  # BreakEven
+                        adjusted_stop_loss = (
+                            position['openPrice'] + spread
+                            if position['type'] == 'POSITION_TYPE_BUY'
+                            else position['openPrice'] - spread
+                        )
+                        await connection.modify_position(
+                            position_id, stop_loss=adjusted_stop_loss, take_profit=position['takeProfit']
+                        )
+                        update.effective_message.reply_text(
+                            f"BreakEven ajusté pour {position_id} ({position['symbol']}) avec spread : {spread:.5f}."
+                        )
+                    elif 'SL' in update.effective_message.text and 'TP' in update.effective_message.text:
+                        await connection.modify_position(
+                            position_id, stop_loss=trade['new_sl'], take_profit=trade['new_tp']
+                        )
+                        update.effective_message.reply_text(
+                            f"StopLoss: {trade['new_sl']} & TakeProfit: {trade['new_tp']} définis pour {position_id}."
+                        )
+                    elif 'SL' in update.effective_message.text:
+                        await connection.modify_position(
+                            position_id, stop_loss=trade['newstop'], take_profit=position['takeProfit']
+                        )
+                        update.effective_message.reply_text(
+                            f"StopLoss: {trade['newstop']} défini pour {position_id}."
+                        )
+                    elif 'TP' in update.effective_message.text:
+                        await connection.modify_position(
+                            position_id, stop_loss=position['stopLoss'], take_profit=trade['newstop']
+                        )
+                        update.effective_message.reply_text(
+                            f"TakeProfit: {trade['newstop']} défini pour {position_id}."
+                        )
 
     except Exception as error:
         logger.error(f'Error: {error}')
@@ -962,7 +985,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
         # Symbols editing
         #if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
-        if 'Trial'.lower() in account_information['name'].lower() or 'Evak'.lower() in account_information['name'].lower():
+        if 'Trial'.lower() in account_information['name'].lower() or 'Eva'.lower() in account_information['name'].lower():
             # Calculer la vrai balance du challenge
             balance = (account_information['balance'] * 5) / 100
         else:
