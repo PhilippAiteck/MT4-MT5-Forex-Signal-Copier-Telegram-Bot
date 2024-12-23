@@ -1125,7 +1125,7 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
 
 async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> None:
-    """Retrieves information about all ongoing trades.
+    """Retrieves information about all ongoing trades and account details.
 
     Arguments:
         update: update from Telegram
@@ -1138,57 +1138,67 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         deployed_states = ['DEPLOYING', 'DEPLOYED']
 
         if initial_state not in deployed_states:
-            #  wait until account is deployed and connected to broker
+            # Wait until account is deployed and connected to broker
             logger.info('Deploying account')
             await account.deploy()
 
         logger.info('Waiting for API server to connect to broker ...')
         await account.wait_connected()
 
-        # connect to MetaApi API
+        # Connect to MetaApi API
         connection = account.get_rpc_connection()
         await connection.connect()
 
-        # wait until terminal state synchronized to the local state
+        # Wait until terminal state synchronized to the local state
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        # Récupérer la connexion à partir du contexte de l'application
-        #connection = context.bot_data['mt_streaming_connection']
-        #update.effective_message.reply_text(f"CONNECTION: {connection}")
+        # Fetch account details: equity and balance
+        account_info = await connection.get_account_information()
+        equity = account_info['equity']
+        balance = account_info['balance']
 
         # Fetch open positions
-        #positions = connection.terminal_state.positions
         positions = await connection.get_positions()
-        #logger.info(positions)
-
 
         if not positions:
-            update.effective_message.reply_text("No ongoing trades at the moment.")
+            update.effective_message.reply_text(
+                f"No ongoing trades at the moment.\n\n"
+                f"Account Balance: <b>{balance:.2f} USD</b>\n",
+                parse_mode=ParseMode.HTML
+            )
             return
 
+        total_profit = 0  # Variable to keep track of total profit/loss
+
         for position in positions:
-            # Calculate trade duration
+            # Add profit/loss of the current position to the total
+            total_profit += position['profit']
+
+            # Format entry time
             entry_time = position['time'].strftime('%d-%m-%Y %H:%M:%S')
-            #current_time = datetime.utcnow().strftime('%d-%m-%Y %H:%M:%S')
-            #duration = current_time - entry_time
 
-            # Extraire jours, heures, minutes et secondes de la durée
-            #days = duration.days
-            #hours, remainder = divmod(duration.seconds, 3600)  # 3600 secondes dans une heure
-            #minutes, seconds = divmod(remainder, 60)  # 60 secondes dans une minute
-
-
+            # Display individual trade information
             trade_info = f"{position['type']}\n" \
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
-                         f"Profit: {position['profit']}\n" \
-                         f"ORDER ID: {position['id']}\n\n" \
-                         f"Entry Time: {entry_time}\n" \
-                         #f"Current Time: {current_time}\n" \
-                         #f"Duration: {days} Day(s), {hours}H: {minutes}M: {seconds}S\n" \
+                         f"Profit: {position['profit']:.2f} USD\n" \
+                         f"ORDER ID: {position['id']}\n" \
+                         f"Entry Time: {entry_time}\n"
 
             update.effective_message.reply_text(f'<pre>{trade_info}</pre>', parse_mode=ParseMode.HTML)
+
+        # Send total profit/loss after listing all trades
+        total_profit_message = f"Total Profit/Loss (P/L): {total_profit:.2f} USD"
+        update.effective_message.reply_text(f'<b>{total_profit_message}</b>', parse_mode=ParseMode.HTML)
+
+        # Send account info after listing total profit/loss and all trades
+        summary_message = (
+            f"<b>Account Summary</b>\n"
+            f"Balance: <b>{balance:.2f} USD</b>\n"
+            f"Equity: <b>{equity:.2f} USD</b>\n"
+        )
+        update.effective_message.reply_text(summary_message, parse_mode=ParseMode.HTML)
 
     except Exception as error:
         logger.error(f'Error: {error}')
