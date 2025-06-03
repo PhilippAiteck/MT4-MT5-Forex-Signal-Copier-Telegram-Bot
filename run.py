@@ -1767,15 +1767,17 @@ def help(update: Update, context: CallbackContext) -> None:
     """
 
     help_message = "This bot is used to automatically enter trades onto your MetaTrader account directly from Telegram. To begin, ensure that you are authorized to use this bot by adjusting your Python script or environment variables.\n\nThis bot supports all trade order types (Market Execution, Limit, and Stop)\n\nAfter an extended period away from the bot, please be sure to re-enter the start command to restart the connection to your MetaTrader account."
-    commands = "List of commands:\n/start : displays welcome message\n/help : displays list of commands and example trades\n/trade : takes in user inputted trade for parsing and placement\n/calculate : calculates trade information for a user inputted trade\n/ongoing_trades : Retrieves information about all ongoing trades.\n"
+    commands = "List of Bot commands:\n/start : displays welcome message\n/help : displays list of commands and example trades\n/trade : takes in user inputted trade for parsing and placement\n/calculate : calculates trade information for a user inputted trade\n/ongoing_trades : Retrieves information about all ongoing trades.\n"
+    trade_command = "List of Trades Commands 💴:" "\n\n\SL\ # message handler to edit SL\nEx: SL 10000 BUY BTCUSD, " "\n\n\TP\ # message handler to edit TP\nEx: TP 20000 BUY BTCUSD" "\n\n\BRV\ # message handler to BREAKEVEN Position By ORDERTYPE OR SYMBOL\nEx: BRV BUY, BRV BTCUSD, BRV BUY BTCUSD" "\n\n\BE\ # message handler to BREAKEVEN Position By ID\nEx: BE 2738574" "\n\n\PARTIELS\ # message handler to CLOSE POSITION PARTIALY % By ORDERTYPE , SYMBOL\nEx: PARTIELS 30 BUY, PARTIELS 30 BTCUSD, PARTIELS 30 BUY BTCUSD" "\n\n\PARTIEL\ # message handler to CLOSE POSITION PARTIALY % By ID\nEx: PARTIEL 30 2738574" "\n\n\CLORES\ # message handler to CLOSE POSITION By ORDERTYPE , SYMBOL \nEx: CLORES BUY, CLORES BTCUSD, CLORES BUY BTCUSD" "\n\n\CLORE\ # message handler to CLOSE POSITION By ID\nEx: CLORE 2738574"
     trade_example = "Example Trades 💴:\n\n"
-    market_execution_example = "Market Execution:\nBUY GBPUSD\nEntry NOW\nSL 1.14336\nTP 1.28930\nTP 1.29845\n\n"
-    limit_example = "Limit Execution:\nBUY LIMIT GBPUSD\nEntry 1.14480\nSL 1.14336\nTP 1.28930\n\n"
-    note = "You are able to enter up to two take profits. If two are entered, both trades will use half of the position size, and one will use TP1 while the other uses TP2.\n\nNote: Use 'NOW' as the entry to enter a market execution trade."
+    market_execution_example = "Market Execution:\n\nXAUUSD BUY 2776\nTP @ 2779.60\nTP @ 2783.20\nTP @ 2785.50\n\nSL @ 2773.60\nRISK 0.1\n\n"
+    limit_example = "\nLimit Execution:\n\nSell Gold @2754-2756\n\nSl :2758\n\nTp1 :2750\nTp2 :2748\n\nRISK 0.1\n\nEnter Slowly-Layer with proper money management\n\nDo not rush your entries\n\n"
+    note = "\nYou are able to enter up to two take profits. If two are entered, both trades will use half of the position size, and one will use TP1 while the other uses TP2.\n\nNote: Use 'NOW' as the entry to enter a market execution trade."
 
     # sends messages to user
     update.effective_message.reply_text(help_message)
     update.effective_message.reply_text(commands)
+    update.effective_message.reply_text(trade_command)
     update.effective_message.reply_text(trade_example + market_execution_example + limit_example + note)
 
     return
