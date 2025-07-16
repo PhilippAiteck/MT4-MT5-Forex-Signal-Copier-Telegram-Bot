@@ -253,6 +253,90 @@ def ParseSignal(signal: str) -> dict:
                 else:
                     trade['RiskFactor'] = RISK_FACTOR
 
+            elif(',' in signal[2].lower()):
+                # ✅ Extraction des données du signal
+                order_info = signal[0].split()
+                order_type = order_info[0].upper()  # BUY ou SELL
+                symbol = order_info[1].upper()  # EURAUD, BTCUSD, XAUUSD...
+                entry_low = float(order_info[2])  # 1.6650
+                entry_high = float(order_info[3])  # 1.6680
+                stop_loss = float(signal[1])  # 1.66900
+                tp_pips = list(map(int, signal[2].split(",")))  # [30, 50, 100]
+
+                # ✅ Détection automatique du tick_size
+                if symbol in CRYPTO:
+                    tick_size = 10
+                elif symbol in INDICES:
+                    tick_size = 1
+                elif symbol in ["XAUUSD", "XAUEUR", "XAUGBP"]:
+                    tick_size = 0.1
+                elif symbol in ["XAGUSD", "XAGEUR", "XAGGBP"]:
+                    tick_size = 0.001
+                elif "JPY" in symbol or len(str(entry_low).split(".")[1]) == 2:
+                    tick_size = 0.01
+                else:
+                    tick_size = 0.0001
+
+                # ✅ Calcul automatique de l'espacement entre les ordres limits
+                num_orders = 9  # Nombre total d'ordres
+                order_spacing = round((entry_high - entry_low) / (num_orders - 1), 5)
+
+                # ✅ Génération des niveaux de pending orders
+                order_limits = [round(entry_low + i * order_spacing, 5) for i in range(num_orders)]
+
+                # ✅ Calcul des niveaux TP en fonction du premier ordre limit
+                base_tp = entry_low - tp_pips[0] * tick_size if order_type == "SELL" else entry_low + tp_pips[0] * tick_size
+
+                tp_levels = {
+                    "TP1": [round(base_tp, 5)] * 4,  # 4 premiers ordres
+                    "TP2": [round(base_tp - (tp_pips[1] - tp_pips[0]) * tick_size, 5)] * 3,  # 3 suivants
+                    "TP3": [round(base_tp - (tp_pips[2] - tp_pips[0]) * tick_size, 5)] * 2  # 2 derniers
+                }
+
+                # ✅ Construction du dictionnaire final
+                trade = {
+                    "OrderType": "Sell Limits" if order_type == "SELL" else "Buy Limits",
+                    "Symbol": symbol,
+                    "Entry": order_limits,
+                    "StopLoss": stop_loss,
+                    "TP": tp_levels["TP1"] + tp_levels["TP2"] + tp_levels["TP3"],
+                    "RiskFactor": float(signal[3].split()[0])
+                }
+                
+                trade["Symbol"] = symbol
+                trade["Entry"] = order_limits
+                trade['StopLoss'] = stop_loss  # 1.6690
+                trade['RiskFactor'] = float((signal[3].split())[0])
+
+                # ✅ Affichage du résultat
+                #print(trade)
+
+
+                    # ✅ Génération de la liste des ordres
+                    #orders = []
+                    #trade['TP'] = []
+                    #for i, order_price in enumerate(order_limits):
+                        #tp_level = (
+                            #trade['TP'].append(float(tp_levels["TP1"][i])) if i < 4 else 
+                            #trade['TP'].append(float(tp_levels["TP2"][i - 4])) if i < 7 else 
+                            #trade['TP'].append(float(tp_levels["TP3"][i - 7])) 
+                        #)
+                        
+                        #orders.append({
+                            #"symbol": symbol,
+                            #"type": order_type + " LIMIT",
+                            #"entry": order_price,
+                            #"stop_loss": stop_loss,
+                            #"take_profit": tp_level
+                        #})
+
+                    # ✅ Affichage des ordres générés
+                    #for order in orders:
+                        #print(order)
+
+
+
+
 
             elif('-' in signal[0].lower()):
                 trade['Symbol'] = (signal[0].split())[1]
@@ -985,9 +1069,9 @@ async def ConnectPlaceTrade(update: Update, context: CallbackContext, trade: dic
 
         # Symbols editing
         #if 'ACCOUNT_TRADE_MODE_DEMO' in account_information['type']:
-        if 'Trial'.lower() in account_information['name'].lower() or 'Eva'.lower() in account_information['name'].lower():
+        if 'Trial'.lower() in account_information['name'].lower() or 'STLR'.lower() in account_information['name'].lower():
             # Calculer la vrai balance du challenge
-            balance = (account_information['balance'] * 5) / 100
+            balance = (account_information['balance'] * 6) / 100
         else:
             balance = account_information['balance']
 
@@ -1153,10 +1237,12 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         logger.info('Waiting for SDK to synchronize to terminal state ...')
         await connection.wait_synchronized()
 
-        # Fetch account details: equity and balance
+        # Fetch account details: equity, balance and currency
         account_info = await connection.get_account_information()
         equity = account_info['equity']
         balance = account_info['balance']
+        currency = account_info['currency']
+
 
         # Fetch open positions
         positions = await connection.get_positions()
@@ -1164,7 +1250,7 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
         if not positions:
             update.effective_message.reply_text(
                 f"No ongoing trades at the moment.\n\n"
-                f"Account Balance: <b>{balance:.2f} USD</b>\n",
+                f"Account Balance: <b>{balance:.2f} {currency}</b>\n",
                 parse_mode=ParseMode.HTML
             )
             return
@@ -1182,21 +1268,21 @@ async def ConnectGetOngoingTrades(update: Update, context: CallbackContext) -> N
             trade_info = f"{position['type']}\n" \
                          f"Symbol: {position['symbol']}\n" \
                          f"Volume: {position['volume']}\n" \
-                         f"Profit: {position['profit']:.2f} USD\n" \
+                         f"Profit: {position['profit']:.2f} {currency}\n" \
                          f"ORDER ID: {position['id']}\n" \
                          f"Entry Time: {entry_time}\n"
 
             update.effective_message.reply_text(f'<pre>{trade_info}</pre>', parse_mode=ParseMode.HTML)
 
         # Send total profit/loss after listing all trades
-        total_profit_message = f"Total Profit/Loss (P/L): {total_profit:.2f} USD"
+        total_profit_message = f"Total Profit/Loss (P/L): {total_profit:.2f} {currency}"
         update.effective_message.reply_text(f'<b>{total_profit_message}</b>', parse_mode=ParseMode.HTML)
 
         # Send account info after listing total profit/loss and all trades
         summary_message = (
             f"<b>Account Summary</b>\n"
-            f"Balance: <b>{balance:.2f} USD</b>\n"
-            f"Equity: <b>{equity:.2f} USD</b>\n"
+            f"Balance: <b>{balance:.2f} {currency}</b>\n"
+            f"Equity: <b>{equity:.2f} {currency}</b>\n"
         )
         update.effective_message.reply_text(summary_message, parse_mode=ParseMode.HTML)
 
@@ -1593,7 +1679,7 @@ def handle_message(update: Update, context: CallbackContext):
     #logger.info(len(signal))
 
     # Liste des expressions régulières et fonctions associées
-    if (len(signal) < 4):
+    if (len(signal) < 3):
         regex_functions = {
                 r"\bPRENEZ LE\b": TakeProfitTrade, # message handler for Take Profit
                 r"\bTOUCHÉ\b": TakeProfitTrade, # message handler for Take Profit
@@ -1627,7 +1713,8 @@ def handle_message(update: Update, context: CallbackContext):
 
                     r"\bRISK\b": PlaceTrade, # message handler for manualy enter trade
 
-                    #r"\btp\b": PlaceTrade, # message handler for entering trade
+                    r"\bSELL\b": PlaceTrade, # message handler for entering trade
+                    r"\bBUY\b": PlaceTrade, # message handler for entering trade
                     r"\bSl\b": PlaceTrade, # message handler for entering trade
                     r"\bSL\b": PlaceTrade, # message handler for entering trade
                     r"\bsl\b": PlaceTrade, # message handler for entering trade
