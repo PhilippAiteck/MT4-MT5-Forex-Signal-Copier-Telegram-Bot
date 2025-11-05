@@ -42,7 +42,7 @@ Start a conversation with @BotFather on Telegram and create a new bot with a uni
 
 **4. Scroll down to 'Public Git repository' and paste the following URL**
 ```
-https://github.com/ogunjobiFX/MT4-MT5-Forex-Signal-Copier-Telegram-Bot
+https://github.com/PhilippAiteck/Forex-Signal-Copier-Telegram-Bot
 ```
 
 **5. Set up Render Application**
@@ -75,6 +75,6 @@ If at any point you decide to make a change to any of the environment variables,
 **Congratulations!** 🥳 If you followed these steps correctly, you should now be able to open a conversation with your bot on Telegram and calculate trade risk-to-reward along with placing trades. For help on how to use the bot, send the /help command for bot instructions and example trades.
 
 # License 📝
-&copy; 2023 Tosin Ogunjobi. All rights reserved.
+&copy; 2025 Philipp Aiteck Corp. All rights reserved.
 
-Licensed under the MIT license.
+Licensed under the Philipp Aiteck Corp license.
