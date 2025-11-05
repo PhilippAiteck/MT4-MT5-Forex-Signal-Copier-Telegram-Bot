@@ -77,4 +77,4 @@ If at any point you decide to make a change to any of the environment variables,
 # License 📝
 &copy; 2025 Philipp Aiteck Corp. All rights reserved.
 
-Licensed under the Philipp Aiteck Corp license.
+Licensed under the MIT license.
