@@ -63,7 +63,7 @@ def ParseSignal(signal: str) -> dict:
     """Starts process of parsing signal and entering trade on MetaTrader account.
 
     Arguments:
-        signal: trading signal
+        signal: trading signal 
 
     Returns:
         a dictionary that contains trade signal information
