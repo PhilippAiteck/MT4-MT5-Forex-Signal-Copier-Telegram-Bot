@@ -142,7 +142,7 @@ def telegram_webhook(update: dict):
 # ---------------------------------------------------------------------------
 # DASHBOARD HTML
 # ---------------------------------------------------------------------------
-@app.get("/dashboard")
+@app.get("/")
 def dashboard_page():
     return FileResponse("dashboard/index.html")
 
