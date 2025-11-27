@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Aiteck Trading Dashboard PRO</title>
+
+    <!-- ChartJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      :root {
+        --bg-main: #05060a;
+        --bg-card: #10131a;
+        --bg-card-alt: #141824;
+        --border-subtle: #1f2433;
+        --accent: #4ea1ff;
+        --accent-soft: rgba(78, 161, 255, 0.12);
+        --text-main: #f5f7ff;
+        --text-muted: #a4adc3;
+        --danger: #ff4e4e;
+        --success: #00d26a;
+        --warning: #ffd15c;
+        --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.4);
+        --radius-lg: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter",
+          Arial, sans-serif;
+        background: radial-gradient(circle at top, #101426 0, #05060a 45%);
+        color: var(--text-main);
+      }
+
+      /* TOP BAR */
+      .topbar {
+        padding: 16px 18px;
+        background: linear-gradient(120deg, #0c101c, #0a0d18);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-soft);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .topbar-title {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .topbar h1 {
+        margin: 0;
+        font-size: 20px;
+        letter-spacing: 0.5px;
+        color: var(--accent);
+      }
+
+      .topbar span {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .topbar-pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(78, 161, 255, 0.4);
+        background: radial-gradient(circle at top left, #18243f, #090c15);
+        font-size: 11px;
+        color: var(--accent);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .topbar-pill-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 8px rgba(0, 210, 106, 0.8);
+      }
+
+      /* FILTERS */
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        background: #0b0f1a;
+        padding: 12px 14px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+      }
+
+      .filters-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+      }
+
+      .filters label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+      }
+
+      .filters input {
+        padding: 7px 9px;
+        border-radius: 8px;
+        border: 1px solid #242a3a;
+        background: #080b14;
+        color: var(--text-main);
+        font-size: 13px;
+      }
+
+      .filters input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(78, 161, 255, 0.4);
+      }
+
+      .filters button {
+        padding: 9px 16px;
+        background: linear-gradient(135deg, var(--accent), #7bb4ff);
+        border: none;
+        border-radius: 999px;
+        cursor: pointer;
+        color: #020308;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 8px 18px rgba(78, 161, 255, 0.4);
+      }
+
+      .filters button:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+      }
+
+      .filters button:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 10px rgba(78, 161, 255, 0.3);
+      }
+
+      /* LAYOUT GRID */
+      .layout-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 16px;
+      }
+
+      .layout-grid-full {
+        grid-column: 1 / -1;
+      }
+
+      /* KPI CARDS */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .kpi-card {
+        background: radial-gradient(circle at top, #1a2135, #10131c);
+        border-radius: var(--radius-lg);
+        padding: 12px 12px;
+        border: 1px solid rgba(78, 161, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .kpi-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at top,
+          rgba(78, 161, 255, 0.28),
+          transparent 60%
+        );
+        opacity: 0;
+        transition: opacity 0.4s ease-out;
+        pointer-events: none;
+      }
+
+      .kpi-card.kpi-active::before {
+        opacity: 1;
+      }
+
+      .kpi-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.09em;
+      }
+
+      .kpi-value {
+        font-size: 20px;
+        margin-top: 4px;
+        margin-bottom: 2px;
+      }
+
+      .kpi-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .kpi-accent {
+        color: var(--accent);
+      }
+
+      .kpi-positive {
+        color: var(--success);
+      }
+
+      .kpi-negative {
+        color: var(--danger);
+      }
+
+      /* CARDS */
+      .card {
+        background: var(--bg-card);
+        padding: 14px 14px 16px;
+        border-radius: var(--radius-lg);
+        margin-bottom: 16px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .card-header h2 {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .card-header span {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .card-subtitle {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+      }
+
+      .card-header-inline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      /* TABLE */
+      .table-wrapper {
+        max-height: 280px;
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid #1b2130;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      thead {
+        background: #141824;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      th,
+      td {
+        padding: 8px 10px;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      th {
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 1px solid #242b3a;
+      }
+
+      tbody tr:nth-child(odd) {
+        background: #0e111b;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #080b14;
+      }
+
+      tbody tr:hover {
+        background: #151a28;
+      }
+
+      .badge-live {
+        background: #ff4e4e;
+        color: #fff;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* COLORS PNL */
+      .pnl-positive {
+        color: var(--success);
+      }
+      .pnl-negative {
+        color: var(--danger);
+      }
+      .live-pnl {
+        margin-top: 8px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        border: 1px solid #2a3145;
+        color: var(--text-muted);
+      }
+
+      /* SMALL LISTS (TOP SYMBOLS) */
+      .summary-list {
+        list-style: none;
+        padding-left: 0;
+        margin: 8px 0 0;
+        font-size: 12px;
+      }
+
+      .summary-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 0;
+        border-bottom: 1px dashed #22283a;
+      }
+
+      .summary-list span {
+        font-family: "JetBrains Mono", Menlo, monospace;
+      }
+
+      /* CHARTS */
+      canvas {
+        max-width: 100%;
+      }
+
+      .chart-container {
+        position: relative;
+        width: 100%;
+        height: 220px;
+      }
+
+      /* RESPONSIVE */
+      @media (max-width: 1024px) {
+        .layout-grid {
+          grid-template-columns: 1fr;
+        }
+        .layout-grid-full {
+          grid-column: auto;
+        }
+        .kpi-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 10px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .kpi-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .filters {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .filters button {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .card {
+          padding: 12px;
+        }
+
+        th,
+        td {
+          padding: 6px 8px;
+        }
+
+        .chart-container {
+          height: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1>Aiteck Trading Dashboard</h1>
+        <span
+          >Vue globale des performances basées sur MetaApi + SQLite
+          (offline)</span
+        >
+      </div>
+      <div class="topbar-pill">
+        <div class="topbar-pill-dot"></div>
+        RPC MetaApi connecté
+      </div>
+    </header>
+
+    <!-- FILTER BAR -->
+    <section class="filters">
+      <div class="filters-group">
+        <label for="days">Période (jours)</label>
+        <input type="number" id="days" value="30" min="1" max="365" />
+      </div>
+
+      <div class="filters-group">
+        <label for="symbol">Symbole</label>
+        <input type="text" id="symbol" placeholder="XAUUSD (optionnel)" />
+      </div>
+
+      <button id="reload-btn">🔄 Mettre à jour</button>
+    </section>
+
+    <!-- KPI GRID -->
+    <section class="kpi-grid">
+      <div class="kpi-card" id="kpi-pnl-card">
+        <div class="kpi-label">PNL total</div>
+        <div class="kpi-value" id="kpi-pnl-total">0.00</div>
+        <div class="kpi-sub" id="kpi-pnl-sub">Sur 0 deals</div>
+      </div>
+
+      <div class="kpi-card" id="kpi-winrate-card">
+        <div class="kpi-label">Winrate</div>
+        <div class="kpi-value" id="kpi-winrate">0%</div>
+        <div class="kpi-sub" id="kpi-winrate-sub">0 gagnants / 0 perdants</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">PNL moyen / trade</div>
+        <div class="kpi-value" id="kpi-avg">0.00</div>
+        <div class="kpi-sub" id="kpi-avg-sub">Filtré selon vos critères</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Top symbole</div>
+        <div class="kpi-value kpi-accent" id="kpi-top-symbol">--</div>
+        <div class="kpi-sub" id="kpi-top-symbol-sub">PNL / nb trades</div>
+      </div>
+    </section>
+
+    <main class="layout-grid">
+      <!-- COLONNE GAUCHE : CHARTS PRINCIPAUX -->
+      <section class="layout-grid-full card">
+        <div class="card-header">
+          <div>
+            <h2>Équity / PNL journalier</h2>
+            <div class="card-subtitle">
+              Somme des profits par jour sur la période sélectionnée.
+            </div>
+          </div>
+          <span id="equity-period-label" class="tag">Période dynamique</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="equity-chart"></canvas>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Courbe de drawdown</h2>
+          <span class="tag">Basé sur l'équity cumulée</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="drawdown-chart"></canvas>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Performance mensuelle</h2>
+          <span class="tag">PnL agrégé par mois</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="monthly-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- PERFORMANCE PAR SYMBOLE -->
+      <section class="layout-grid-full card">
+        <div class="card-header">
+          <h2>Performance par symbole</h2>
+          <span class="tag">Vue globale par actif</span>
+        </div>
+        <div class="card-subtitle">
+          Classement des symboles selon leur PnL total, nombre de trades et
+          winrate.
+        </div>
+
+        <div class="chart-container" style="height: 200px; margin-bottom: 10px">
+          <canvas id="symbol-chart"></canvas>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Symbole</th>
+                <th>Trades</th>
+                <th>PNL</th>
+                <th>Winrate</th>
+              </tr>
+            </thead>
+            <tbody id="symbol-stats-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- OPEN TRADES -->
+      <section class="card">
+        <div class="card-header-inline">
+          <h2>Positions Ouvertes</h2>
+          <span class="badge-live">LIVE</span>
+        </div>
+        <div id="live-pnl" class="live-pnl">PNL latent total : 0.00</div>
+
+        <table class="table" id="open-trades">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th>Volume</th>
+              <th>Open</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- DERNIERS DEALS -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Derniers deals</h2>
+          <span class="tag">Historique brut</span>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Symbole</th>
+                <th>Type</th>
+                <th>Volume</th>
+                <th>Prix</th>
+                <th>Profit</th>
+              </tr>
+            </thead>
+            <tbody id="deals-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- RÉSUMÉ DÉTAILLÉ -->
+      <section class="layout-grid-full card">
+        <div class="card-header">
+          <h2>Résumé détaillé</h2>
+          <span class="tag">Synthèse des stats</span>
+        </div>
+        <div id="summary"></div>
+      </section>
+    </main>
+
+    <script>
+      // ---------- UTILS ----------
+      async function fetchJSON(url) {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return await r.json();
+      }
+
+      function safeNumber(n) {
+        return typeof n === "number" && !isNaN(n) ? n : 0;
+      }
+
+      function animateValue(el, start, end, duration, suffix = "") {
+        start = safeNumber(start);
+        end = safeNumber(end);
+        const range = end - start;
+        const startTime = performance.now();
+        function step(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const value = start + range * progress;
+          el.textContent = value.toFixed(2) + suffix;
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      function animatePercent(el, start, end, duration) {
+        start = safeNumber(start);
+        end = safeNumber(end);
+        const range = end - start;
+        const startTime = performance.now();
+        function step(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const value = start + range * progress;
+          el.textContent = value.toFixed(1) + "%";
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      function activateKpiCard(cardId, ms = 500) {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        card.classList.add("kpi-active");
+        setTimeout(() => card.classList.remove("kpi-active"), ms);
+      }
+
+      const daysInput = document.getElementById("days");
+      const symbolInput = document.getElementById("symbol");
+
+      function buildParams() {
+        const days = daysInput.value || 30;
+        const symbol = symbolInput.value.trim();
+        return { days, symbol };
+      }
+
+      // ---------- SUMMARY + KPI ----------
+      async function loadSummary() {
+        const { days, symbol } = buildParams();
+        let url = `/api/summary?days=${days}`;
+        if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+
+        try {
+          const data = await fetchJSON(url);
+          const box = document.getElementById("summary");
+
+          const nbDeals = safeNumber(data.nb_deals);
+          const pnlTotal = safeNumber(data.pnl_total);
+          const avgProfit = safeNumber(data.avg_profit);
+          const wins = safeNumber(data.wins);
+          const losses = safeNumber(data.losses);
+          const winrate = safeNumber(data.winrate);
+          const topSymbols = Array.isArray(data.top_symbols)
+            ? data.top_symbols
+            : [];
+
+          // Update KPI cards
+          const pnlEl = document.getElementById("kpi-pnl-total");
+          const winrateEl = document.getElementById("kpi-winrate");
+          const avgEl = document.getElementById("kpi-avg");
+          const topSymbolEl = document.getElementById("kpi-top-symbol");
+
+          const pnlSubEl = document.getElementById("kpi-pnl-sub");
+          const winrateSubEl = document.getElementById("kpi-winrate-sub");
+          const avgSubEl = document.getElementById("kpi-avg-sub");
+          const topSymbolSubEl = document.getElementById("kpi-top-symbol-sub");
+
+          const prevPnl = parseFloat(pnlEl.textContent) || 0;
+          const prevWin = parseFloat(winrateEl.textContent) || 0;
+          const prevAvg = parseFloat(avgEl.textContent) || 0;
+
+          animateValue(pnlEl, prevPnl, pnlTotal, 600);
+          animatePercent(winrateEl, prevWin, winrate, 600);
+          animateValue(avgEl, prevAvg, avgProfit, 600);
+
+          pnlSubEl.textContent = `Sur ${nbDeals} deals (${days} jours)${
+            symbol ? " — " + symbol.toUpperCase() : ""
+          }`;
+          winrateSubEl.textContent = `${wins} gagnants / ${losses} perdants`;
+          avgSubEl.textContent = `PNL moyen par deal filtré`;
+
+          if (topSymbols.length > 0) {
+            const best = topSymbols[0];
+            topSymbolEl.textContent = best.symbol || "--";
+            topSymbolSubEl.textContent = `PNL ${best.pnl.toFixed(2)} sur ${
+              best.nb_deals
+            } deals`;
+          } else {
+            topSymbolEl.textContent = "--";
+            topSymbolSubEl.textContent = "Aucun symbole pour cette période";
+          }
+
+          // Highlight main KPI
+          activateKpiCard("kpi-pnl-card");
+          activateKpiCard("kpi-winrate-card");
+
+          // Résumé détaillé (bloc bas)
+          box.innerHTML = `
+            <p class="card-subtitle">
+              Période : <b>${days} jours</b>${
+            symbol ? ` — Symbole filtré : <b>${symbol.toUpperCase()}</b>` : ""
+          }</p>
+            <ul class="summary-list">
+              <li>
+                <span>Nombre total de deals</span>
+                <span>${nbDeals}</span>
+              </li>
+              <li>
+                <span>PNL total</span>
+                <span class="${
+                  pnlTotal >= 0 ? "pnl-positive" : "pnl-negative"
+                }">${pnlTotal.toFixed(2)}</span>
+              </li>
+              <li>
+                <span>PNL moyen par trade</span>
+                <span>${avgProfit.toFixed(2)}</span>
+              </li>
+              <li>
+                <span>Winrate</span>
+                <span>${winrate.toFixed(1)}%</span>
+              </li>
+              <li>
+                <span>Trades gagnants / perdants</span>
+                <span>${wins} / ${losses}</span>
+              </li>
+            </ul>
+          `;
+        } catch (e) {
+          console.error("Erreur summary:", e);
+        }
+      }
+
+      // ---------- ÉQUITY CURVE ----------
+      let equityChart = null;
+
+      async function loadEquity() {
+        const { days, symbol } = buildParams();
+        let url = `/api/pnl-by-day?days=${days}`;
+        if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+        try {
+          const data = await fetchJSON(url);
+          const labels = data.map((x) => x.day);
+          const pnl = data.map((x) => safeNumber(x.pnl));
+
+          const ctx = document.getElementById("equity-chart").getContext("2d");
+
+          if (equityChart) equityChart.destroy();
+
+          equityChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: "PNL journalier",
+                  data: pnl,
+                  borderColor: "#4ea1ff",
+                  backgroundColor: "rgba(78, 161, 255, 0.1)",
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: {
+              plugins: {
+                legend: { labels: { color: "#d0d5ea" } },
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                },
+                y: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                },
+              },
+            },
+          });
+
+          const label = document.getElementById("equity-period-label");
+          label.textContent = `${days} jours${
+            symbol ? " — " + symbol.toUpperCase() : " — Tous symboles"
+          }`;
+        } catch (e) {
+          console.error("Erreur equity:", e);
+        }
+      }
+
+      // ---------- DRAWDOWN ----------
+      let drawdownChart = null;
+
+      async function loadDrawdown() {
+        const { days, symbol } = buildParams();
+        let url = `/api/drawdown?days=${days}`;
+        if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+
+        try {
+          const data = await fetchJSON(url);
+          const labels = data.items.map((d) => d.day);
+          const dd = data.items.map((d) => safeNumber(d.drawdown));
+
+          const ctx = document
+            .getElementById("drawdown-chart")
+            .getContext("2d");
+          if (drawdownChart) drawdownChart.destroy();
+
+          drawdownChart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: "Drawdown (%)",
+                  data: dd,
+                  borderColor: "#ff4e4e",
+                  backgroundColor: "rgba(255, 78, 78, 0.12)",
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: {
+              plugins: {
+                legend: { labels: { color: "#d0d5ea" } },
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                },
+                y: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                },
+              },
+            },
+          });
+        } catch (e) {
+          console.error("Erreur drawdown:", e);
+        }
+      }
+
+      // ---------- MONTHLY PERFORMANCE ----------
+      let monthlyChart = null;
+
+      async function loadMonthlyPerformance() {
+        const { days, symbol } = buildParams();
+        let url = `/api/monthly-performance?days=${days}`;
+        if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+
+        try {
+          const data = await fetchJSON(url);
+          const items = Array.isArray(data.items) ? data.items : [];
+          const labels = items.map((m) => m.month);
+          const pnl = items.map((m) => safeNumber(m.pnl));
+
+          const ctx = document.getElementById("monthly-chart").getContext("2d");
+          if (monthlyChart) monthlyChart.destroy();
+
+          monthlyChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: "PNL mensuel",
+                  data: pnl,
+                  backgroundColor: pnl.map((v) =>
+                    v >= 0 ? "rgba(0, 210, 106, 0.6)" : "rgba(255, 78, 78, 0.6)"
+                  ),
+                  borderWidth: 0,
+                },
+              ],
+            },
+            options: {
+              plugins: {
+                legend: { labels: { color: "#d0d5ea" } },
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { display: false },
+                },
+                y: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                },
+              },
+            },
+          });
+        } catch (e) {
+          console.error("Erreur monthly performance:", e);
+        }
+      }
+
+      // ---------- SYMBOL STATS ----------
+      let symbolChart = null;
+
+      async function loadSymbolStats() {
+        const { days, symbol } = buildParams();
+        let url = `/api/symbol-stats?days=${days}`;
+        if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+
+        try {
+          const data = await fetchJSON(url);
+          const items = Array.isArray(data.items) ? data.items : [];
+
+          const tbody = document.getElementById("symbol-stats-body");
+          tbody.innerHTML = "";
+
+          const symbols = items.map((s) => s.symbol);
+          const pnls = items.map((s) => safeNumber(s.pnl));
+
+          items.forEach((s) => {
+            const row = document.createElement("tr");
+            const pnlClass = s.pnl >= 0 ? "pnl-positive" : "pnl-negative";
+            row.innerHTML = `
+              <td>${s.symbol}</td>
+              <td>${s.trades}</td>
+              <td class="${pnlClass}">${s.pnl.toFixed(2)}</td>
+              <td>${safeNumber(s.winrate).toFixed(1)}%</td>
+            `;
+            tbody.appendChild(row);
+          });
+
+          const ctx = document.getElementById("symbol-chart").getContext("2d");
+          if (symbolChart) symbolChart.destroy();
+
+          symbolChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: symbols,
+              datasets: [
+                {
+                  label: "PNL par symbole",
+                  data: pnls,
+                  backgroundColor: pnls.map((v) =>
+                    v >= 0 ? "rgba(0, 210, 106, 0.7)" : "rgba(255, 78, 78, 0.7)"
+                  ),
+                  borderWidth: 0,
+                },
+              ],
+            },
+            options: {
+              plugins: {
+                legend: { labels: { color: "#d0d5ea" } },
+              },
+              scales: {
+                x: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { display: false },
+                },
+                y: {
+                  ticks: { color: "#a4adc3" },
+                  grid: { color: "rgba(255,255,255,0.04)" },
+                },
+              },
+            },
+          });
+        } catch (e) {
+          console.error("Erreur symbol stats:", e);
+        }
+      }
+
+      // ---------- OPEN TRADES ----------
+      async function loadOpenTrades() {
+        const symbolInput = document.getElementById("symbol").value.trim();
+        let url = "/api/open-trades";
+
+        // On envoie le filtre symbol seulement si saisi
+        if (symbolInput) {
+          url += `?symbol=${encodeURIComponent(symbolInput)}`;
+        }
+
+        let data;
+        try {
+          data = await fetchJSON(url);
+        } catch (e) {
+          console.error("Erreur fetch /api/open-trades:", e);
+          return;
+        }
+
+        const tbody = document.querySelector("#open-trades tbody");
+        if (!tbody) return;
+
+        tbody.innerHTML = "";
+
+        if (!data || !Array.isArray(data.items)) {
+          console.warn("Réponse /api/open-trades inattendue:", data);
+          return;
+        }
+
+        let totalPnl = 0;
+
+        data.items.forEach((p) => {
+          // On prend profit ou unrealizedProfit, et on force en nombre
+          const raw = Number(p.profit ?? p.unrealizedProfit ?? 0);
+          if (!Number.isNaN(raw)) {
+            totalPnl += raw;
+          }
+
+          const cls = raw >= 0 ? "pnl-positive" : "pnl-negative";
+
+          tbody.innerHTML += `
+            <tr>
+              <td>${p.id}</td>
+              <td>${p.symbol ?? ""}</td>
+              <td>${p.type ?? ""}</td>
+              <td>${p.volume ?? ""}</td>
+              <td>${p.openPrice ?? ""}</td>
+              <td class="${cls}">${raw.toFixed(2)}</td>
+            </tr>
+          `;
+        });
+
+        // Mise à jour du PnL latent total
+        const livePnlEl = document.getElementById("live-pnl");
+        if (livePnlEl) {
+          livePnlEl.textContent = `PNL latent total : ${totalPnl.toFixed(2)}`;
+          livePnlEl.className =
+            "live-pnl " + (totalPnl >= 0 ? "pnl-positive" : "pnl-negative");
+        }
+      }
+
+      // ---------- LAST DEALS ----------
+      async function loadDeals() {
+        const { days, symbol } = buildParams();
+        let url = `/api/deals?days=${days}&limit=100`;
+        if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+
+        try {
+          const data = await fetchJSON(url);
+          const tbody = document.getElementById("deals-body");
+          tbody.innerHTML = "";
+
+          const items = Array.isArray(data.items) ? data.items : [];
+
+          items.forEach((trd) => {
+            const tr = document.createElement("tr");
+            const cls = trd.profit >= 0 ? "pnl-positive" : "pnl-negative";
+            tr.innerHTML = `
+              <td>${trd.time}</td>
+              <td>${trd.symbol || ""}</td>
+              <td>${trd.type}</td>
+              <td>${trd.volume || ""}</td>
+              <td>${trd.price || ""}</td>
+              <td class="${cls}">${trd.profit}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.error("Erreur deals:", e);
+        }
+      }
+
+      // ---------- RELOAD GLOBAL ----------
+      async function reloadAll() {
+        loadSummary();
+        loadEquity();
+        loadDrawdown();
+        loadMonthlyPerformance();
+        loadSymbolStats();
+        loadOpenTrades();
+        loadDeals();
+      }
+
+      document.getElementById("reload-btn").onclick = reloadAll;
+
+      // Initial load
+      reloadAll();
+
+      // Auto-refresh LIVE positions every 10s
+      setInterval(loadOpenTrades, 10000);
+    </script>
+  </body>
+</html>
