@@ -1,20 +1,19 @@
 # app.py
 import os
 import logging
-import time
 import asyncio
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Request, Query, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from telegram import Bot, Update
 from telegram.ext import Dispatcher
 
 from metaapi_client import MetaApiClient
-from config import API_KEY, ACCOUNT_ID, TOKEN
+from config import API_KEY, ACCOUNT_ID, TOKEN, APP_URL
 
 import mt_bot                  # ton bot existant
 import dashboard_db as db      # module DB/analytics
@@ -26,8 +25,11 @@ logger = logging.getLogger(__name__)
 # --- MetaApi RPC client ---
 META = MetaApiClient(api_key=API_KEY, account_id=ACCOUNT_ID)
 
-# Intervalle de sync incrémentale en secondes (configurable via env si tu veux)
+# Intervalle de sync incrémentale en secondes
 INCREMENTAL_SYNC_INTERVAL = int(os.getenv("INCREMENTAL_SYNC_INTERVAL", "60"))
+
+# URL publique de l'app (Railway / ngrok) pour le webhook Telegram
+#APP_URL = os.getenv("APP_URL", "").strip()
 
 # --- FastAPI app ---
 app = FastAPI(title="Aiteck Bot + Dashboard", version="1.0.0")
@@ -107,6 +109,17 @@ async def on_startup():
     # 5) Démarrer la tâche de sync incrémentale en arrière-plan
     app.state.sync_task = asyncio.create_task(incremental_sync_worker())
 
+    # 6) (optionnel) Setup automatique du webhook Telegram si APP_URL est configuré
+    if APP_URL:
+        webhook_url = f"{APP_URL.rstrip('/')}/telegram/webhook"
+        try:
+            bot.set_webhook(webhook_url)
+            logger.info(f"✅ Webhook Telegram configuré automatiquement sur {webhook_url}")
+        except Exception as e:
+            logger.error(f"❌ Impossible de configurer automatiquement le webhook Telegram: {e}")
+    else:
+        logger.warning("⚠ APP_URL non défini → webhook Telegram non configuré automatiquement.")
+
 
 @app.on_event("shutdown")
 async def on_shutdown():
@@ -140,6 +153,36 @@ def telegram_webhook(update: dict):
 
 
 # ---------------------------------------------------------------------------
+# ENDPOINT POUR SETUP MANUEL DU WEBHOOK (Railway)
+# ---------------------------------------------------------------------------
+@app.get("/setup-webhook")
+def setup_webhook():
+    """
+    À appeler UNE FOIS après déploiement si besoin :
+      GET https://.../setup-webhook
+
+    Utilise APP_URL pour définir l'URL du webhook Telegram.
+    """
+    if not APP_URL:
+        raise HTTPException(
+            status_code=500,
+            detail="APP_URL n'est pas configuré dans les variables d'environnement",
+        )
+
+    webhook_url = f"{APP_URL.rstrip('/')}/telegram/webhook"
+    try:
+        bot.set_webhook(webhook_url)
+        logger.info(f"✅ Webhook Telegram configuré sur {webhook_url}")
+        return {"ok": True, "webhook_url": webhook_url}
+    except Exception as e:
+        logger.error(f"❌ Erreur lors du setup webhook Telegram: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Impossible de configurer le webhook Telegram",
+        )
+
+
+# ---------------------------------------------------------------------------
 # DASHBOARD HTML
 # ---------------------------------------------------------------------------
 @app.get("/")
@@ -148,7 +191,7 @@ def dashboard_page():
 
 
 # ---------------------------------------------------------------------------
-# ENDPOINTS API DASHBOARD
+# ENDPOINTS API DASHBOARD → délégués à dashboard_db
 # ---------------------------------------------------------------------------
 @app.get("/api/summary")
 def api_summary(
@@ -167,67 +210,55 @@ def api_pnl_by_day(
 
 
 @app.get("/api/deals")
-def list_deals(
+def api_deals(
     days: int = Query(30, ge=1, le=365),
     symbol: Optional[str] = None,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-):
-    conn = db.get_db_connection()
-    cur = conn.cursor()
-
-    from_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
-    params: List[Any] = [from_date]
-    symbol_filter = ""
-
-    if symbol:
-        symbol_filter = "AND symbol = ?"
-        params.append(symbol.upper())
-
-    cur.execute(
-        f"SELECT COUNT(*) as total FROM deals WHERE time >= ? {symbol_filter}",
-        params,
-    )
-    total = cur.fetchone()["total"]
-
-    cur.execute(
-        f"""
-        SELECT id, platform, type, symbol, time, broker_time,
-               volume, price, profit, entry_type, reason,
-               order_id, position_id, stop_loss, take_profit
-        FROM deals
-        WHERE time >= ?
-          {symbol_filter}
-        ORDER BY time DESC
-        LIMIT ? OFFSET ?
-        """,
-        params + [limit, offset],
-    )
-
-    rows = cur.fetchall()
-    conn.close()
-
-    return {
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "items": [dict(r) for r in rows],
-    }
+) -> Dict[str, Any]:
+    return db.list_deals_from_db(days=days, symbol=symbol, limit=limit, offset=offset)
 
 
+@app.get("/api/drawdown")
+def api_drawdown(
+    days: int = Query(30, ge=1, le=365),
+    symbol: Optional[str] = None,
+) -> Dict[str, Any]:
+    return db.drawdown_from_db(days=days, symbol=symbol)
+
+
+@app.get("/api/monthly-performance")
+def api_monthly_performance(
+    days: int = Query(180, ge=1, le=730),
+    symbol: Optional[str] = None,
+) -> Dict[str, Any]:
+    return db.monthly_performance_from_db(days=days, symbol=symbol)
+
+
+@app.get("/api/symbol-stats")
+def api_symbol_stats(
+    days: int = Query(90, ge=1, le=365),
+    symbol: Optional[str] = None,
+) -> Dict[str, Any]:
+    return db.symbol_stats_from_db(days=days, symbol=symbol)
+
+
+# ---------------------------------------------------------------------------
+# POSITIONS OUVERTES (LIVE) VIA METAAPI
+# ---------------------------------------------------------------------------
 @app.get("/api/open-trades")
 async def api_open_trades(symbol: Optional[str] = None) -> Dict[str, Any]:
     """
     Retourne les positions ouvertes (live) depuis MetaAPI.
     - Utilise exclusivement META.get_open_positions() (wrapper RPC existant)
     - Peut filtrer par symbole via ?symbol=XAUUSD
-    - Expose à la fois `profit` et `unrealizedProfit`, plus un `displayProfit` pour le dashboard
+    - Expose `profit`, `unrealizedProfit` et `displayProfit` pour le dashboard
     """
     if not META._connected:
         return {
             "count": 0,
             "items": [],
-            "status": "MetaApi not connected yet"
+            "status": "MetaApi not connected yet",
         }
 
     try:
@@ -235,40 +266,42 @@ async def api_open_trades(symbol: Optional[str] = None) -> Dict[str, Any]:
         positions = META.get_open_positions()
     except Exception as e:
         logger.error(f"Erreur MetaApi get_open_positions: {e}")
-        # Réponse claire pour le frontend
-        raise HTTPException(status_code=500, detail="MetaApi error while fetching open positions")
+        raise HTTPException(
+            status_code=500,
+            detail="MetaApi error while fetching open positions",
+        )
 
     filtered: List[Dict[str, Any]] = []
     symbol_filter = symbol.upper() if symbol else None
 
     for p in positions:
-        # some impls renvoient des objets, d'autres déjà des dicts
         pos = dict(p)
 
         sym = (pos.get("symbol") or "").upper()
         if symbol_filter and sym != symbol_filter:
             continue
 
-        # Profit d'affichage : on privilégie unrealizedProfit, sinon profit
         unreal = pos.get("unrealizedProfit")
         raw_profit = pos.get("profit")
         display_profit = unreal if unreal is not None else raw_profit
 
-        filtered.append({
-            "id": pos.get("id"),
-            "symbol": pos.get("symbol"),
-            "type": pos.get("type"),
-            "volume": pos.get("volume"),
-            "openPrice": pos.get("openPrice"),
-            "profit": raw_profit,
-            "unrealizedProfit": unreal,
-            "displayProfit": display_profit,
-            "swap": pos.get("swap"),
-            "commission": pos.get("commission"),
-            "time": pos.get("updateTime") or pos.get("time"),
-            "stopLoss": pos.get("stopLoss"),
-            "takeProfit": pos.get("takeProfit"),
-        })
+        filtered.append(
+            {
+                "id": pos.get("id"),
+                "symbol": pos.get("symbol"),
+                "type": pos.get("type"),
+                "volume": pos.get("volume"),
+                "openPrice": pos.get("openPrice"),
+                "profit": raw_profit,
+                "unrealizedProfit": unreal,
+                "displayProfit": display_profit,
+                "swap": pos.get("swap"),
+                "commission": pos.get("commission"),
+                "time": pos.get("updateTime") or pos.get("time"),
+                "stopLoss": pos.get("stopLoss"),
+                "takeProfit": pos.get("takeProfit"),
+            }
+        )
 
     # Trier par time décroissant (les plus récents en haut)
     filtered.sort(key=lambda x: x.get("time") or "", reverse=True)
@@ -277,201 +310,5 @@ async def api_open_trades(symbol: Optional[str] = None) -> Dict[str, Any]:
         "count": len(filtered),
         "symbol_filter": symbol_filter,
         "items": filtered,
-        "status": "ok"
-    }
-
-# --- Endpoints analytics supplémentaires pour le dashboard PRO ---
-
-
-@app.get("/api/drawdown")
-def api_drawdown(
-    days: int = Query(30, ge=1, le=365),
-    symbol: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    Calcule la courbe de drawdown à partir de la PNL journalière.
-    Retourne un format : {"items": [{day, equity, drawdown}], "max_drawdown": ..., ...}
-    """
-    # On réutilise la PNL journalière déjà filtrée (symbol + NON_TRADE_TYPES)
-    daily = db.pnl_by_day_from_db(days=days, symbol=symbol)
-
-    equity = []
-    dd = []
-    running_equity = 0.0
-    running_peak = 0.0
-    max_drawdown = 0.0
-
-    for d in daily:
-        pnl = d["pnl"] or 0.0
-        running_equity += pnl
-        if running_equity > running_peak:
-            running_peak = running_equity
-
-        if running_peak > 0:
-            drawdown_pct = (running_equity - running_peak) / running_peak * 100.0
-        else:
-            drawdown_pct = 0.0
-
-        max_drawdown = min(max_drawdown, drawdown_pct)
-
-        equity.append(running_equity)
-        dd.append(drawdown_pct)
-
-    items = []
-    for i, d in enumerate(daily):
-        items.append(
-            {
-                "day": d["day"],
-                "equity": round(equity[i], 2),
-                "drawdown": round(dd[i], 2),
-            }
-        )
-
-    return {
-        "period_days": days,
-        "symbol_filter": symbol.upper() if symbol else None,
-        "items": items,
-        "max_drawdown": round(max_drawdown, 2),
-    }
-
-
-@app.get("/api/monthly-performance")
-def api_monthly_performance(
-    days: int = Query(180, ge=1, le=730),
-    symbol: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    PNL agrégé par mois.
-    Format retourné:
-    {
-      "period_days": ...,
-      "symbol_filter": ...,
-      "items": [
-        {"month": "2025-01", "pnl": 1234.56},
-        ...
-      ]
-    }
-    """
-    conn = db.get_db_connection()
-    cur = conn.cursor()
-
-    from_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
-    base_params: List[Any] = [from_date]
-    symbol_filter = ""
-
-    if symbol:
-        symbol_filter = "AND symbol = ?"
-        base_params.append(symbol.upper())
-
-    # On exclut les NON_TRADE_TYPES (BALANCE, CREDIT, etc.)
-    non_trade_placeholders = ", ".join(["?" for _ in db.NON_TRADE_TYPES])
-
-    sql = f"""
-        SELECT
-            substr(time, 1, 7) as month,
-            SUM(profit) as pnl
-        FROM deals
-        WHERE time >= ?
-          {symbol_filter}
-          AND profit IS NOT NULL
-          AND (type IS NULL OR type NOT IN ({non_trade_placeholders}))
-        GROUP BY month
-        ORDER BY month ASC
-    """
-
-    params: List[Any] = [*base_params, *db.NON_TRADE_TYPES]
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    conn.close()
-
-    items = []
-    for r in rows:
-        month = r["month"]
-        pnl = r["pnl"] if r["pnl"] is not None else 0.0
-        items.append({"month": month, "pnl": round(pnl, 2)})
-
-    return {
-        "period_days": days,
-        "symbol_filter": symbol.upper() if symbol else None,
-        "items": items,
-    }
-
-
-@app.get("/api/symbol-stats")
-def api_symbol_stats(
-    days: int = Query(90, ge=1, le=365),
-    symbol: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    Stats par symbole:
-    - trades = nombre de deals
-    - pnl = somme des profits
-    - winrate = % de trades gagnants
-    Format:
-    {
-      "period_days": ...,
-      "symbol_filter": ...,
-      "items": [
-        {"symbol": "XAUUSD", "trades": 10, "pnl": 1234.0, "winrate": 70.0},
-        ...
-      ]
-    }
-    """
-    conn = db.get_db_connection()
-    cur = conn.cursor()
-
-    from_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
-    base_params: List[Any] = [from_date]
-    symbol_filter = ""
-
-    if symbol:
-        symbol_filter = "AND symbol = ?"
-        base_params.append(symbol.upper())
-
-    non_trade_placeholders = ", ".join(["?" for _ in db.NON_TRADE_TYPES])
-
-    sql = f"""
-        SELECT
-            symbol,
-            COUNT(*) as trades,
-            SUM(profit) as pnl,
-            SUM(CASE WHEN profit > 0 THEN 1 ELSE 0 END) as wins,
-            SUM(CASE WHEN profit <= 0 THEN 1 ELSE 0 END) as losses
-        FROM deals
-        WHERE time >= ?
-          {symbol_filter}
-          AND profit IS NOT NULL
-          AND (type IS NULL OR type NOT IN ({non_trade_placeholders}))
-        GROUP BY symbol
-        HAVING symbol IS NOT NULL
-        ORDER BY pnl DESC
-    """
-
-    params: List[Any] = [*base_params, *db.NON_TRADE_TYPES]
-    cur.execute(sql, params)
-    rows = cur.fetchall()
-    conn.close()
-
-    items: List[Dict[str, Any]] = []
-    for r in rows:
-        trades = r["trades"] or 0
-        pnl = r["pnl"] if r["pnl"] is not None else 0.0
-        wins = r["wins"] or 0
-        losses = r["losses"] or 0
-        total = wins + losses
-        winrate = (wins / total * 100.0) if total > 0 else 0.0
-
-        items.append(
-            {
-                "symbol": r["symbol"],
-                "trades": trades,
-                "pnl": round(pnl, 2),
-                "winrate": round(winrate, 2),
-            }
-        )
-
-    return {
-        "period_days": days,
-        "symbol_filter": symbol.upper() if symbol else None,
-        "items": items,
+        "status": "ok",
     }
